@@ -3,6 +3,7 @@ package lamimi
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 )
 
 type Collection struct {
@@ -10,7 +11,7 @@ type Collection struct {
 }
 
 type Repository interface {
-	WriteCollection(ctx context.Context, collection *Collection) error
+	WriteCollection(ctx context.Context, key string, collection *Collection) error
 }
 
 type Service struct {
@@ -21,9 +22,10 @@ func NewService(repo Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) WriteCollection(ctx context.Context, collection *Collection) error {
-	if err := s.repo.WriteCollection(ctx, collection); err != nil {
-		return err
+func (s *Service) WriteLamimiCollections(ctx context.Context, key string, lamimi *Collection) error {
+	if err := s.repo.WriteCollection(ctx, key, lamimi); err != nil {
+		return fmt.Errorf("cannot write collection: %w", err)
 	}
+
 	return nil
 }
