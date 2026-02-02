@@ -10,5 +10,6 @@ import (
 
 type PfoetchenLamimiCollection struct {
 	CollectionKey  string
+	CollectionUser string
 	CollectionJson json.RawMessage
 }

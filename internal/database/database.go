@@ -20,6 +20,7 @@ func Connect(ctx context.Context, uri string) (*DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %w", err)
 	}
+	defer conn.Close() // nolint: errcheck
 
 	if err := conn.PingContext(ctx); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
@@ -38,4 +39,39 @@ func Connect(ctx context.Context, uri string) (*DB, error) {
 
 func (db *DB) Close() error {
 	return db.conn.Close()
+}
+
+func (db *DB) Update(ctx context.Context, fn func(tx *sql.Tx) error) error {
+	return db.transaction(ctx, fn, true)
+}
+
+func (db *DB) Read(ctx context.Context, fn func(tx *sql.Tx) error) error {
+	return db.transaction(ctx, fn, false)
+}
+
+func (db *DB) transaction(ctx context.Context, fn func(tx *sql.Tx) error, write bool) (err error) {
+	defer func(start time.Time) {
+		took := time.Since(start).Milliseconds()
+
+		if err != nil {
+			slog.Error("database transaction failed", "error", err, "write", write, "took", took)
+		}
+	}(time.Now())
+
+	tx, err := db.conn.BeginTx(ctx, &sql.TxOptions{ReadOnly: !write})
+
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback() // nolint: errcheck
+
+	if err := fn(tx); err != nil {
+		return fmt.Errorf("execute transaction: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return nil
 }

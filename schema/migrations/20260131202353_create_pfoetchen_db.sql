@@ -3,6 +3,7 @@
 CREATE SCHEMA "pfoetchen";
 CREATE TABLE "pfoetchen"."lamimi_collection" (
     "collection_key" varchar PRIMARY KEY,
+    "collection_user" varchar PRIMARY KEY,
     "collection_json" pg_catalog.json NOT NULL
   );
 -- +goose StatementEnd

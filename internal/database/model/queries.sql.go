@@ -11,30 +11,37 @@ import (
 )
 
 const getCollection = `-- name: GetCollection :one
-SELECT collection_key, collection_json FROM "pfoetchen"."lamimi_collection"
+SELECT collection_key, collection_user, collection_json FROM "pfoetchen"."lamimi_collection"
 WHERE "collection_key" = $1
+AND "collection_user" = $2
 `
 
-func (q *Queries) GetCollection(ctx context.Context, collectionKey string) (PfoetchenLamimiCollection, error) {
-	row := q.db.QueryRowContext(ctx, getCollection, collectionKey)
+type GetCollectionParams struct {
+	CollectionKey  string
+	CollectionUser string
+}
+
+func (q *Queries) GetCollection(ctx context.Context, arg GetCollectionParams) (PfoetchenLamimiCollection, error) {
+	row := q.db.QueryRowContext(ctx, getCollection, arg.CollectionKey, arg.CollectionUser)
 	var i PfoetchenLamimiCollection
-	err := row.Scan(&i.CollectionKey, &i.CollectionJson)
+	err := row.Scan(&i.CollectionKey, &i.CollectionUser, &i.CollectionJson)
 	return i, err
 }
 
 const upsertLamimiCollection = `-- name: UpsertLamimiCollection :exec
-INSERT INTO "pfoetchen"."lamimi_collection" ("collection_key", "collection_json")
-VALUES ($1, $2)
+INSERT INTO "pfoetchen"."lamimi_collection" ("collection_key", "collection_user", "collection_json")
+VALUES ($1, $2, $3)
 ON CONFLICT ("collection_key")
-DO UPDATE SET "collection_json" = $2
+DO UPDATE SET "collection_json" = $3
 `
 
 type UpsertLamimiCollectionParams struct {
 	CollectionKey  string
+	CollectionUser string
 	CollectionJson json.RawMessage
 }
 
 func (q *Queries) UpsertLamimiCollection(ctx context.Context, arg UpsertLamimiCollectionParams) error {
-	_, err := q.db.ExecContext(ctx, upsertLamimiCollection, arg.CollectionKey, arg.CollectionJson)
+	_, err := q.db.ExecContext(ctx, upsertLamimiCollection, arg.CollectionKey, arg.CollectionUser, arg.CollectionJson)
 	return err
 }
