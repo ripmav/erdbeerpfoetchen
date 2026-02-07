@@ -2,9 +2,10 @@
 -- +goose StatementBegin
 CREATE SCHEMA "pfoetchen";
 CREATE TABLE "pfoetchen"."lamimi_collection" (
-    "collection_key" varchar PRIMARY KEY,
-    "collection_user" varchar PRIMARY KEY,
-    "collection_json" pg_catalog.json NOT NULL
+    "collection_key" varchar,
+    "collection_user" varchar,
+    "collection_json" pg_catalog.json NOT NULL,
+    PRIMARY KEY ("collection_key", "collection_user")
   );
 -- +goose StatementEnd
 
