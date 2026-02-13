@@ -30,7 +30,9 @@ func (cmd *ApiCommand) Run(ctx context.Context, cfg *Config) error {
 		}
 	}()
 
-	handle.NewLamimiHandler(lamimi.NewService(database.NewLamimiRepository(db)))
+	lamimiService := lamimi.NewService(database.NewLamimiRepository(db))
+	lamimiHandler := handle.NewLamimiHandler(lamimiService)
+	lamimiHandler.Install(mux)
 
 	if err := cfg.ListenAndServe(ctx, mux); err != nil {
 		return fmt.Errorf("failed to serve: %w", err)

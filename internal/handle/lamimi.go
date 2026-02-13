@@ -12,19 +12,18 @@ import (
 )
 
 type LamimiService interface {
-	WriteLamimiCollections(ctx context.Context, key string, lamimi *lamimi.Collection) error
+	WriteLamimiCollections(ctx context.Context, key string, user string, collection *lamimi.Collection) error
+	ReadLamimiCollections(ctx context.Context, key string, user string) (*lamimi.Collection, error)
 }
 
 type LamimiHandler struct {
-	Service LamimiService
+	service LamimiService
 }
 
 func NewLamimiHandler(service LamimiService) *LamimiHandler {
-	return &LamimiHandler{Service: service}
-}
-
-func (h *LamimiHandler) Install(handle func(patter string, handler http.Handler)) {
-	handle("POST /api/v1/lamimi", http.HandlerFunc(h.receive))
+	return &LamimiHandler{
+		service: service,
+	}
 }
 
 func (h *LamimiHandler) receive(w http.ResponseWriter, r *http.Request) {
@@ -38,6 +37,13 @@ func (h *LamimiHandler) receive(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	userKey := r.Header.Get("X-USER-KEY")
+
+	if userKey == "" {
+		slog.Error("empty user key")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	collection, err := decode(r.Body)
 
@@ -46,7 +52,7 @@ func (h *LamimiHandler) receive(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	if err := h.Service.WriteLamimiCollections(ctx, storageKey, collection); err != nil {
+	if err := h.service.WriteLamimiCollections(ctx, storageKey, userKey, collection); err != nil {
 		slog.Error("cannot write collections", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -54,6 +60,50 @@ func (h *LamimiHandler) receive(w http.ResponseWriter, r *http.Request) {
 
 	slog.Debug("lamimi collection successful written")
 	w.WriteHeader(http.StatusAccepted)
+}
+
+func (h *LamimiHandler) send(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
+	storageKey := r.Header.Get("X-STORAGE-KEY")
+
+	if storageKey == "" {
+		slog.Error("empty storage key")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	userKey := r.Header.Get("X-USER-KEY")
+
+	if userKey == "" {
+		slog.Error("empty user key")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	collection, err := h.service.ReadLamimiCollections(ctx, storageKey, userKey)
+	if err != nil {
+		slog.Error("cannot read collections", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	slog.Debug("lamimi collection successful read")
+	_, err = w.Write(collection.RawMessage)
+
+	if err != nil {
+		slog.Error("cannot write response", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *LamimiHandler) Install(mux *http.ServeMux) {
+	mux.HandleFunc("POST /api/v1/lamimi", h.receive)
+	mux.HandleFunc("GET /api/v1/lamimi", h.send)
 }
 
 func decode(r io.Reader) (*lamimi.Collection, error) {

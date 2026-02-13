@@ -8,6 +8,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq" // also for side effects
+	"github.com/ripmav/erdbeerpfoetchen/internal/lamimi"
 )
 
 type DB struct {
@@ -20,7 +21,9 @@ func Connect(ctx context.Context, uri string) (*DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %w", err)
 	}
-	defer conn.Close() // nolint: errcheck
+	defer func(conn *sql.DB) {
+		_ = conn.Close() // nolint: errcheck
+	}(conn)
 
 	if err := conn.PingContext(ctx); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
@@ -45,8 +48,8 @@ func (db *DB) Update(ctx context.Context, fn func(tx *sql.Tx) error) error {
 	return db.transaction(ctx, fn, true)
 }
 
-func (db *DB) Read(ctx context.Context, fn func(tx *sql.Tx) error) error {
-	return db.transaction(ctx, fn, false)
+func (db *DB) Read(ctx context.Context, fn func(tx *sql.Tx) error) (*lamimi.Collection, error) {
+	return nil, db.transaction(ctx, fn, false)
 }
 
 func (db *DB) transaction(ctx context.Context, fn func(tx *sql.Tx) error, write bool) (err error) {
@@ -63,7 +66,9 @@ func (db *DB) transaction(ctx context.Context, fn func(tx *sql.Tx) error, write 
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback() // nolint: errcheck
+	defer func(tx *sql.Tx) {
+		_ = tx.Rollback() // nolint: errcheck
+	}(tx)
 
 	if err := fn(tx); err != nil {
 		return fmt.Errorf("execute transaction: %w", err)

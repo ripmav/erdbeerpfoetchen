@@ -10,19 +10,19 @@ import (
 	"encoding/json"
 )
 
-const getCollection = `-- name: GetCollection :one
+const getLamimiCollection = `-- name: GetLamimiCollection :one
 SELECT collection_key, collection_user, collection_json FROM "pfoetchen"."lamimi_collection"
 WHERE "collection_key" = $1
 AND "collection_user" = $2
 `
 
-type GetCollectionParams struct {
+type GetLamimiCollectionParams struct {
 	CollectionKey  string
 	CollectionUser string
 }
 
-func (q *Queries) GetCollection(ctx context.Context, arg GetCollectionParams) (PfoetchenLamimiCollection, error) {
-	row := q.db.QueryRowContext(ctx, getCollection, arg.CollectionKey, arg.CollectionUser)
+func (q *Queries) GetLamimiCollection(ctx context.Context, arg GetLamimiCollectionParams) (PfoetchenLamimiCollection, error) {
+	row := q.db.QueryRowContext(ctx, getLamimiCollection, arg.CollectionKey, arg.CollectionUser)
 	var i PfoetchenLamimiCollection
 	err := row.Scan(&i.CollectionKey, &i.CollectionUser, &i.CollectionJson)
 	return i, err

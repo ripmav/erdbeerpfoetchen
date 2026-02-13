@@ -2,16 +2,12 @@ package lamimi
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 )
 
-type Collection struct {
-	json.RawMessage
-}
-
 type Repository interface {
 	WriteCollection(ctx context.Context, key, user string, collection *Collection) error
+	ReadCollection(ctx context.Context, key, user string) (*Collection, error)
 }
 
 type Service struct {
@@ -28,4 +24,13 @@ func (s *Service) WriteLamimiCollections(ctx context.Context, key, user string, 
 	}
 
 	return nil
+}
+
+func (s *Service) ReadLamimiCollections(ctx context.Context, key, user string) (*Collection, error) {
+	collection, err := s.repo.ReadCollection(ctx, key, user)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read collection: %w", err)
+	}
+
+	return collection, nil
 }
