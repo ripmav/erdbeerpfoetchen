@@ -13,7 +13,7 @@ import (
 )
 
 type application struct {
-	cli.Config `envprefix:"pfotchen"`
+	cli.Config `envprefix:"PFOETCHEN_"`
 }
 
 func main() {
