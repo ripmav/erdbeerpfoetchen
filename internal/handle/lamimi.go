@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/ripmav/erdbeerpfoetchen/internal/lamimi"
+	"github.com/ripmav/erdbeerpfoetchen/internal/middleware"
 )
 
 type LamimiService interface {
@@ -102,8 +103,8 @@ func (h *LamimiHandler) send(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *LamimiHandler) Install(mux *http.ServeMux) {
-	mux.HandleFunc("POST /api/v1/lamimi", h.receive)
-	mux.HandleFunc("GET /api/v1/lamimi", h.send)
+	mux.HandleFunc("POST /api/v1/lamimi", middleware.Auth(h.receive))
+	mux.HandleFunc("GET /api/v1/lamimi", middleware.Auth(h.send))
 }
 
 func decode(r io.Reader) (*lamimi.Collection, error) {
