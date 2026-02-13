@@ -100,7 +100,7 @@ go run ./cmd/api api
 All endpoints require an `Authorization: Bearer <token>` header.
 
 > [!NOTE]
-> Current valid token is hardcoded to `my-super-secret-key` (See TODO).
+> Current valid token is hardcoded to `my-super-secret-key` (See [TODO](TODO.md)).
 
 ### 1. Store a Collection
 - **URL**: `POST /api/v1/lamimi`
