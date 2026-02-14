@@ -4,7 +4,7 @@ CREATE SCHEMA "pfoetchen";
 CREATE TABLE "pfoetchen"."lamimi_collection" (
     "collection_key" varchar,
     "collection_user" varchar,
-    "collection_json" pg_catalog.json NOT NULL,
+    "collection_json" jsonb NOT NULL,
     PRIMARY KEY ("collection_key", "collection_user")
   );
 -- +goose StatementEnd
