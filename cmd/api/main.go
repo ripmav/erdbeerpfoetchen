@@ -14,6 +14,8 @@ import (
 
 type application struct {
 	cli.Config `envprefix:"PFOETCHEN_"`
+
+	Api cli.ApiCommand `cmd:"" help:"Run the API server"`
 }
 
 func main() {

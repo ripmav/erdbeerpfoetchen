@@ -15,7 +15,11 @@ type DB struct {
 	conn *sql.DB
 }
 
-func Connect(ctx context.Context, uri string) (*DB, error) {
+func Connect(ctx context.Context, uri string, debug bool) (*DB, error) {
+	if debug {
+		uri = fmt.Sprintf("%s?sslmode=disable", uri)
+	}
+
 	conn, err := sql.Open("postgres", uri)
 
 	if err != nil {

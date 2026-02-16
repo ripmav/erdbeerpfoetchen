@@ -6,10 +6,19 @@ package model
 
 import (
 	"encoding/json"
+
+	"github.com/google/uuid"
 )
 
 type PfoetchenLamimiCollection struct {
-	CollectionKey  string
-	CollectionUser string
-	CollectionJson json.RawMessage
+	CollectionKey      string
+	CollectionStreamer uuid.UUID
+	CollectionUser     string
+	CollectionJson     json.RawMessage
+}
+
+type PfoetchenStreamer struct {
+	ID           uuid.UUID
+	StreamerName string
+	ApiToken     uuid.UUID
 }

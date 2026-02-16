@@ -8,40 +8,79 @@ package model
 import (
 	"context"
 	"encoding/json"
+
+	"github.com/google/uuid"
 )
 
 const getLamimiCollection = `-- name: GetLamimiCollection :one
-SELECT collection_key, collection_user, collection_json FROM "pfoetchen"."lamimi_collection"
+SELECT collection_key, collection_streamer, collection_user, collection_json FROM "pfoetchen"."lamimi_collection"
 WHERE "collection_key" = $1
-AND "collection_user" = $2
+AND "collection_streamer" = $2
+AND "collection_user" = $3
 `
 
 type GetLamimiCollectionParams struct {
-	CollectionKey  string
-	CollectionUser string
+	CollectionKey      string
+	CollectionStreamer uuid.UUID
+	CollectionUser     string
 }
 
 func (q *Queries) GetLamimiCollection(ctx context.Context, arg GetLamimiCollectionParams) (PfoetchenLamimiCollection, error) {
-	row := q.db.QueryRowContext(ctx, getLamimiCollection, arg.CollectionKey, arg.CollectionUser)
+	row := q.db.QueryRowContext(ctx, getLamimiCollection, arg.CollectionKey, arg.CollectionStreamer, arg.CollectionUser)
 	var i PfoetchenLamimiCollection
-	err := row.Scan(&i.CollectionKey, &i.CollectionUser, &i.CollectionJson)
+	err := row.Scan(
+		&i.CollectionKey,
+		&i.CollectionStreamer,
+		&i.CollectionUser,
+		&i.CollectionJson,
+	)
 	return i, err
 }
 
+const getStreamer = `-- name: GetStreamer :one
+SELECT id, streamer_name, api_token FROM "pfoetchen"."streamer"
+WHERE "streamer_name" = $1
+`
+
+func (q *Queries) GetStreamer(ctx context.Context, streamerName string) (PfoetchenStreamer, error) {
+	row := q.db.QueryRowContext(ctx, getStreamer, streamerName)
+	var i PfoetchenStreamer
+	err := row.Scan(&i.ID, &i.StreamerName, &i.ApiToken)
+	return i, err
+}
+
+const getStreamerId = `-- name: GetStreamerId :one
+SELECT id FROM "pfoetchen"."streamer"
+WHERE "streamer_name" = $1
+`
+
+func (q *Queries) GetStreamerId(ctx context.Context, streamerName string) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, getStreamerId, streamerName)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const upsertLamimiCollection = `-- name: UpsertLamimiCollection :exec
-INSERT INTO "pfoetchen"."lamimi_collection" ("collection_key", "collection_user", "collection_json")
-VALUES ($1, $2, $3)
-ON CONFLICT ("collection_key")
-DO UPDATE SET "collection_json" = $3
+INSERT INTO "pfoetchen"."lamimi_collection" ("collection_key", "collection_streamer", "collection_user", "collection_json")
+VALUES ($1, $2, $3, $4)
+ON CONFLICT ("collection_key", "collection_streamer", "collection_user")
+DO UPDATE SET "collection_json" = $4
 `
 
 type UpsertLamimiCollectionParams struct {
-	CollectionKey  string
-	CollectionUser string
-	CollectionJson json.RawMessage
+	CollectionKey      string
+	CollectionStreamer uuid.UUID
+	CollectionUser     string
+	CollectionJson     json.RawMessage
 }
 
 func (q *Queries) UpsertLamimiCollection(ctx context.Context, arg UpsertLamimiCollectionParams) error {
-	_, err := q.db.ExecContext(ctx, upsertLamimiCollection, arg.CollectionKey, arg.CollectionUser, arg.CollectionJson)
+	_, err := q.db.ExecContext(ctx, upsertLamimiCollection,
+		arg.CollectionKey,
+		arg.CollectionStreamer,
+		arg.CollectionUser,
+		arg.CollectionJson,
+	)
 	return err
 }
