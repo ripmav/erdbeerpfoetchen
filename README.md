@@ -103,17 +103,17 @@ All endpoints require an `Authorization: Bearer <token>` header.
 > Current valid token is hardcoded to `my-super-secret-key` (See [TODO](TODO.md)).
 
 ### 1. Store a Collection
-- **URL**: `POST /api/v1/lamimi`
+- **URL**: `POST /api/v1/{streamer_name}/lamimi`
 - **Headers**:
-  - `X-STORAGE-KEY`: Unique storage identifier (required)
+  - `X-COLLECTION-KEY`: Unique collection identifier (required)
   - `X-USER-KEY`: Unique user identifier (required)
 - **Body**: JSON object
 - **Response**: `202 Accepted` on success.
 
 ### 2. Retrieve a Collection
-- **URL**: `GET /api/v1/lamimi`
+- **URL**: `GET /api/v1/{streamer_name}/lamimi`
 - **Headers**:
-  - `X-STORAGE-KEY`: Unique storage identifier (required)
+  - `X-COLLECTION-KEY`: Unique collection identifier (required)
   - `X-USER-KEY`: Unique user identifier (required)
 - **Response**: `200 OK` with JSON body.
 
