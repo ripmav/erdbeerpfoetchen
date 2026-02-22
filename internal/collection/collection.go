@@ -1,4 +1,4 @@
-package lamimi
+package collection
 
 import "encoding/json"
 

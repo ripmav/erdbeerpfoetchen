@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ripmav/erdbeerpfoetchen/internal/collection"
 	"github.com/ripmav/erdbeerpfoetchen/internal/database"
 	"github.com/ripmav/erdbeerpfoetchen/internal/handle"
-	"github.com/ripmav/erdbeerpfoetchen/internal/lamimi"
 )
 
 type ApiCommand struct {
@@ -30,8 +30,12 @@ func (cmd *ApiCommand) Run(ctx context.Context, cfg *Config) error {
 		}
 	}()
 
-	lamimiService := lamimi.NewService(database.NewLamimiRepository(db))
-	lamimiHandler := handle.NewLamimiHandler(lamimiService)
+	collectionRepo := database.NewCollectionRepository(db)
+	streamerRepo := database.NewUserRepository(db)
+
+	collectionService := collection.New(collectionRepo)
+	userService := collection.New(collectionRepo)
+	lamimiHandler := handle.NewCollectionHandler(collectionService, userService)
 	lamimiHandler.Install(mux)
 
 	if err := cfg.ListenAndServe(ctx, mux); err != nil {

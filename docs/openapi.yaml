@@ -1,0 +1,80 @@
+openapi: 3.0.0
+info:
+  title: Pfötchen API
+  description: API for managing Lamimi collections.
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: V1 API
+
+paths:
+  /collection/{streamer_name}:
+    parameters:
+      - name: streamer_name
+        in: path
+        required: true
+        description: Name of the streamer.
+        schema:
+          type: string
+      - name: X-USER-KEY
+        in: header
+        required: true
+        description: Unique key for the user.
+        schema:
+          type: string
+      - name: X-COLLECTION-KEY
+        in: header
+        required: true
+        description: Unique key for the collection.
+        schema:
+          type: string
+    get:
+      summary: Read Lamimi collections
+      description: Returns the Lamimi collection for the given streamer, user, and collection key.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request (e.g., missing headers)
+        '401':
+          description: Unauthorized (missing or invalid token)
+        '403':
+          description: Forbidden (invalid streamer name or token)
+        '500':
+          description: Internal server error
+    post:
+      summary: Write Lamimi collections
+      description: Updates the Lamimi collection for the given streamer, user, and collection key.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '202':
+          description: Request accepted
+        '400':
+          description: Bad request (e.g., missing headers or invalid payload)
+        '401':
+          description: Unauthorized (missing or invalid token)
+        '403':
+          description: Forbidden (invalid streamer name or token)
+        '500':
+          description: Internal server error
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer

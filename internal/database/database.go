@@ -8,7 +8,6 @@ import (
 	"time"
 
 	_ "github.com/lib/pq" // also for side effects
-	"github.com/ripmav/erdbeerpfoetchen/internal/lamimi"
 )
 
 type DB struct {
@@ -52,8 +51,8 @@ func (db *DB) Update(ctx context.Context, fn func(tx *sql.Tx) error) error {
 	return db.transaction(ctx, fn, true)
 }
 
-func (db *DB) Read(ctx context.Context, fn func(tx *sql.Tx) error) (*lamimi.Collection, error) {
-	return nil, db.transaction(ctx, fn, false)
+func (db *DB) Read(ctx context.Context, fn func(tx *sql.Tx) error) error {
+	return db.transaction(ctx, fn, false)
 }
 
 func (db *DB) transaction(ctx context.Context, fn func(tx *sql.Tx) error, write bool) (err error) {

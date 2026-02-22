@@ -1,19 +1,23 @@
--- name: UpsertLamimiCollection :exec
-INSERT INTO "pfoetchen"."lamimi_collection" ("collection_key", "collection_streamer", "collection_user", "collection_json")
+-- name: UpsertCollection :exec
+INSERT INTO "pfoetchen"."collection" ("key", "streamer", "viewer", "json")
 VALUES ($1, $2, $3, $4)
-ON CONFLICT ("collection_key", "collection_streamer", "collection_user")
-DO UPDATE SET "collection_json" = $4;
+ON CONFLICT ("key", "streamer", "viewer")
+DO UPDATE SET "json" = $4;
 
--- name: GetLamimiCollection :one
-SELECT * FROM "pfoetchen"."lamimi_collection"
-WHERE "collection_key" = sqlc.arg(collection_key)
-AND "collection_streamer" = sqlc.arg(collection_streamer)
-AND "collection_user" = sqlc.arg(collection_user);
+-- name: GetCollection :one
+SELECT * FROM "pfoetchen"."collection"
+WHERE "key" = sqlc.arg(key)
+AND "streamer" = sqlc.arg(streamer)
+AND "viewer" = sqlc.arg(user_hash);
 
--- name: GetStreamer :one
-SELECT * FROM "pfoetchen"."streamer"
-WHERE "streamer_name" = sqlc.arg(streamer_name);
+-- name: GetUser :one
+SELECT * FROM "pfoetchen"."user"
+WHERE "user_name" = sqlc.arg(user_name);
 
--- name: GetStreamerId :one
-SELECT id FROM "pfoetchen"."streamer"
-WHERE "streamer_name" = sqlc.arg(streamer_name);
+-- name: GetUserId :one
+SELECT id FROM "pfoetchen"."user"
+WHERE "user_name" = sqlc.arg(user_name);
+
+-- name: GetUserApiToken :one
+SELECT api_token FROM "pfoetchen"."user"
+WHERE "user_name" = sqlc.arg(user_name);

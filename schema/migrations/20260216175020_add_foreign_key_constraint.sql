@@ -1,15 +1,15 @@
 -- +goose Up
 -- +goose StatementBegin
-ALTER TABLE "pfoetchen"."lamimi_collection"
-ADD CONSTRAINT streamer_id_collection_fk
-FOREIGN KEY ("collection_streamer")
-REFERENCES "pfoetchen"."streamer" ("id")
+ALTER TABLE "pfoetchen"."collection"
+ADD CONSTRAINT user_id_collection_fk
+FOREIGN KEY ("streamer")
+REFERENCES "pfoetchen"."user" ("id")
 ON DELETE CASCADE
 ;
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-ALTER TABLE "pfoetchen"."lamimi_collection"
-DROP CONSTRAINT streamer_id_collection_fk;
+ALTER TABLE "pfoetchen"."collection"
+DROP CONSTRAINT user_id_collection_fk;
 -- +goose StatementEnd

@@ -1,8 +1,8 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TABLE "pfoetchen"."streamer" (
+CREATE TABLE "pfoetchen"."user" (
     "id" uuid NOT NULL DEFAULT uuidv7(),
-    "streamer_name" varchar NOT NULL,
+    "user_name" varchar NOT NULL,
     "api_token" uuid  NOT NULL DEFAULT gen_random_uuid(),
     PRIMARY KEY ("id")
 );
@@ -10,5 +10,5 @@ CREATE TABLE "pfoetchen"."streamer" (
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE "pfoetchen"."streamer";
+DROP TABLE "pfoetchen"."user";
 -- +goose StatementEnd

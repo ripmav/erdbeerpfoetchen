@@ -10,15 +10,15 @@ import (
 	"github.com/google/uuid"
 )
 
-type PfoetchenLamimiCollection struct {
-	CollectionKey      string
-	CollectionStreamer uuid.UUID
-	CollectionUser     string
-	CollectionJson     json.RawMessage
+type PfoetchenCollection struct {
+	Key      string
+	Streamer uuid.UUID
+	Viewer   string
+	Json     json.RawMessage
 }
 
-type PfoetchenStreamer struct {
-	ID           uuid.UUID
-	StreamerName string
-	ApiToken     uuid.UUID
+type PfoetchenUser struct {
+	ID       uuid.UUID
+	UserName string
+	ApiToken uuid.UUID
 }

@@ -24,12 +24,13 @@
 .
 ├── cmd/
 │   └── api/                # Application entry point (main.go)
+├── docs/                   # API documentation (OpenAPI spec)
 ├── internal/
 │   ├── cli/                # CLI and configuration logic (using Kong)
+│   ├── collection/         # Domain models and services
 │   ├── database/           # Database connection and repository implementations
 │   │   └── model/          # Generated sqlc models
 │   ├── handle/             # HTTP request handlers
-│   ├── lamimi/             # Domain models and services
 │   └── middleware/         # HTTP middlewares (Auth)
 ├── schema/                 # Database schema and migrations
 │   ├── migrations/         # Goose migrations
@@ -97,13 +98,15 @@ go run ./cmd/api api
 
 ## API Endpoints
 
+The full API specification is available in the [OpenAPI spec](docs/openapi.yaml).
+
 All endpoints require an `Authorization: Bearer <token>` header.
 
 > [!NOTE]
 > Current valid token is hardcoded to `my-super-secret-key` (See [TODO](TODO.md)).
 
 ### 1. Store a Collection
-- **URL**: `POST /api/v1/{streamer_name}/lamimi`
+- **URL**: `POST /api/v1/collection/{streamer_name}`
 - **Headers**:
   - `X-COLLECTION-KEY`: Unique collection identifier (required)
   - `X-USER-KEY`: Unique user identifier (required)
@@ -111,7 +114,7 @@ All endpoints require an `Authorization: Bearer <token>` header.
 - **Response**: `202 Accepted` on success.
 
 ### 2. Retrieve a Collection
-- **URL**: `GET /api/v1/{streamer_name}/lamimi`
+- **URL**: `GET /api/v1/collection/{streamer_name}`
 - **Headers**:
   - `X-COLLECTION-KEY`: Unique collection identifier (required)
   - `X-USER-KEY`: Unique user identifier (required)

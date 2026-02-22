@@ -12,75 +12,87 @@ import (
 	"github.com/google/uuid"
 )
 
-const getLamimiCollection = `-- name: GetLamimiCollection :one
-SELECT collection_key, collection_streamer, collection_user, collection_json FROM "pfoetchen"."lamimi_collection"
-WHERE "collection_key" = $1
-AND "collection_streamer" = $2
-AND "collection_user" = $3
+const getCollection = `-- name: GetCollection :one
+SELECT key, streamer, viewer, json FROM "pfoetchen"."collection"
+WHERE "key" = $1
+AND "streamer" = $2
+AND "viewer" = $3
 `
 
-type GetLamimiCollectionParams struct {
-	CollectionKey      string
-	CollectionStreamer uuid.UUID
-	CollectionUser     string
+type GetCollectionParams struct {
+	Key      string
+	Streamer uuid.UUID
+	UserHash string
 }
 
-func (q *Queries) GetLamimiCollection(ctx context.Context, arg GetLamimiCollectionParams) (PfoetchenLamimiCollection, error) {
-	row := q.db.QueryRowContext(ctx, getLamimiCollection, arg.CollectionKey, arg.CollectionStreamer, arg.CollectionUser)
-	var i PfoetchenLamimiCollection
+func (q *Queries) GetCollection(ctx context.Context, arg GetCollectionParams) (PfoetchenCollection, error) {
+	row := q.db.QueryRowContext(ctx, getCollection, arg.Key, arg.Streamer, arg.UserHash)
+	var i PfoetchenCollection
 	err := row.Scan(
-		&i.CollectionKey,
-		&i.CollectionStreamer,
-		&i.CollectionUser,
-		&i.CollectionJson,
+		&i.Key,
+		&i.Streamer,
+		&i.Viewer,
+		&i.Json,
 	)
 	return i, err
 }
 
-const getStreamer = `-- name: GetStreamer :one
-SELECT id, streamer_name, api_token FROM "pfoetchen"."streamer"
-WHERE "streamer_name" = $1
+const getUser = `-- name: GetUser :one
+SELECT id, user_name, api_token FROM "pfoetchen"."user"
+WHERE "user_name" = $1
 `
 
-func (q *Queries) GetStreamer(ctx context.Context, streamerName string) (PfoetchenStreamer, error) {
-	row := q.db.QueryRowContext(ctx, getStreamer, streamerName)
-	var i PfoetchenStreamer
-	err := row.Scan(&i.ID, &i.StreamerName, &i.ApiToken)
+func (q *Queries) GetUser(ctx context.Context, userName string) (PfoetchenUser, error) {
+	row := q.db.QueryRowContext(ctx, getUser, userName)
+	var i PfoetchenUser
+	err := row.Scan(&i.ID, &i.UserName, &i.ApiToken)
 	return i, err
 }
 
-const getStreamerId = `-- name: GetStreamerId :one
-SELECT id FROM "pfoetchen"."streamer"
-WHERE "streamer_name" = $1
+const getUserApiToken = `-- name: GetUserApiToken :one
+SELECT api_token FROM "pfoetchen"."user"
+WHERE "user_name" = $1
 `
 
-func (q *Queries) GetStreamerId(ctx context.Context, streamerName string) (uuid.UUID, error) {
-	row := q.db.QueryRowContext(ctx, getStreamerId, streamerName)
+func (q *Queries) GetUserApiToken(ctx context.Context, userName string) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, getUserApiToken, userName)
+	var api_token uuid.UUID
+	err := row.Scan(&api_token)
+	return api_token, err
+}
+
+const getUserId = `-- name: GetUserId :one
+SELECT id FROM "pfoetchen"."user"
+WHERE "user_name" = $1
+`
+
+func (q *Queries) GetUserId(ctx context.Context, userName string) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, getUserId, userName)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
 }
 
-const upsertLamimiCollection = `-- name: UpsertLamimiCollection :exec
-INSERT INTO "pfoetchen"."lamimi_collection" ("collection_key", "collection_streamer", "collection_user", "collection_json")
+const upsertCollection = `-- name: UpsertCollection :exec
+INSERT INTO "pfoetchen"."collection" ("key", "streamer", "viewer", "json")
 VALUES ($1, $2, $3, $4)
-ON CONFLICT ("collection_key", "collection_streamer", "collection_user")
-DO UPDATE SET "collection_json" = $4
+ON CONFLICT ("key", "streamer", "viewer")
+DO UPDATE SET "json" = $4
 `
 
-type UpsertLamimiCollectionParams struct {
-	CollectionKey      string
-	CollectionStreamer uuid.UUID
-	CollectionUser     string
-	CollectionJson     json.RawMessage
+type UpsertCollectionParams struct {
+	Key      string
+	Streamer uuid.UUID
+	Viewer   string
+	Json     json.RawMessage
 }
 
-func (q *Queries) UpsertLamimiCollection(ctx context.Context, arg UpsertLamimiCollectionParams) error {
-	_, err := q.db.ExecContext(ctx, upsertLamimiCollection,
-		arg.CollectionKey,
-		arg.CollectionStreamer,
-		arg.CollectionUser,
-		arg.CollectionJson,
+func (q *Queries) UpsertCollection(ctx context.Context, arg UpsertCollectionParams) error {
+	_, err := q.db.ExecContext(ctx, upsertCollection,
+		arg.Key,
+		arg.Streamer,
+		arg.Viewer,
+		arg.Json,
 	)
 	return err
 }

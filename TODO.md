@@ -5,4 +5,4 @@
 - [ ] Implement automated CI/CD pipeline.
 - [ ] Add support for multiple collection types.
 - [ ] Implement rate limiting middleware.
-- [ ] Add API documentation (e.g., Swagger/OpenAPI).
+- [x] Add API documentation (e.g., Swagger/OpenAPI).
