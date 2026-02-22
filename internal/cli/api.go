@@ -10,6 +10,7 @@ import (
 	"github.com/ripmav/erdbeerpfoetchen/internal/collection"
 	"github.com/ripmav/erdbeerpfoetchen/internal/database"
 	"github.com/ripmav/erdbeerpfoetchen/internal/handle"
+	"github.com/ripmav/erdbeerpfoetchen/internal/user"
 )
 
 type ApiCommand struct {
@@ -31,12 +32,13 @@ func (cmd *ApiCommand) Run(ctx context.Context, cfg *Config) error {
 	}()
 
 	collectionRepo := database.NewCollectionRepository(db)
-	streamerRepo := database.NewUserRepository(db)
+	userRepo := database.NewUserRepository(db)
 
 	collectionService := collection.New(collectionRepo)
-	userService := collection.New(collectionRepo)
-	lamimiHandler := handle.NewCollectionHandler(collectionService, userService)
-	lamimiHandler.Install(mux)
+	userService := user.New(userRepo)
+
+	collectionHandler := handle.NewCollectionHandler(collectionService, userService)
+	collectionHandler.Install(mux)
 
 	if err := cfg.ListenAndServe(ctx, mux); err != nil {
 		return fmt.Errorf("failed to serve: %w", err)

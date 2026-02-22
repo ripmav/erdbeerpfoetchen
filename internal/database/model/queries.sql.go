@@ -13,7 +13,7 @@ import (
 )
 
 const getCollection = `-- name: GetCollection :one
-SELECT key, streamer, viewer, json FROM "pfoetchen"."collection"
+SELECT key, streamer, viewer, json FROM "streaming"."collection"
 WHERE "key" = $1
 AND "streamer" = $2
 AND "viewer" = $3
@@ -25,9 +25,9 @@ type GetCollectionParams struct {
 	UserHash string
 }
 
-func (q *Queries) GetCollection(ctx context.Context, arg GetCollectionParams) (PfoetchenCollection, error) {
+func (q *Queries) GetCollection(ctx context.Context, arg GetCollectionParams) (StreamingCollection, error) {
 	row := q.db.QueryRowContext(ctx, getCollection, arg.Key, arg.Streamer, arg.UserHash)
-	var i PfoetchenCollection
+	var i StreamingCollection
 	err := row.Scan(
 		&i.Key,
 		&i.Streamer,
@@ -37,20 +37,8 @@ func (q *Queries) GetCollection(ctx context.Context, arg GetCollectionParams) (P
 	return i, err
 }
 
-const getUser = `-- name: GetUser :one
-SELECT id, user_name, api_token FROM "pfoetchen"."user"
-WHERE "user_name" = $1
-`
-
-func (q *Queries) GetUser(ctx context.Context, userName string) (PfoetchenUser, error) {
-	row := q.db.QueryRowContext(ctx, getUser, userName)
-	var i PfoetchenUser
-	err := row.Scan(&i.ID, &i.UserName, &i.ApiToken)
-	return i, err
-}
-
 const getUserApiToken = `-- name: GetUserApiToken :one
-SELECT api_token FROM "pfoetchen"."user"
+SELECT api_token FROM "streaming"."user"
 WHERE "user_name" = $1
 `
 
@@ -61,8 +49,32 @@ func (q *Queries) GetUserApiToken(ctx context.Context, userName string) (uuid.UU
 	return api_token, err
 }
 
+const getUserById = `-- name: GetUserById :one
+SELECT id, user_name, api_token FROM "streaming"."user"
+WHERE "id" = $1
+`
+
+func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (StreamingUser, error) {
+	row := q.db.QueryRowContext(ctx, getUserById, id)
+	var i StreamingUser
+	err := row.Scan(&i.ID, &i.UserName, &i.ApiToken)
+	return i, err
+}
+
+const getUserByUserName = `-- name: GetUserByUserName :one
+SELECT id, user_name, api_token FROM "streaming"."user"
+WHERE "user_name" = $1
+`
+
+func (q *Queries) GetUserByUserName(ctx context.Context, userName string) (StreamingUser, error) {
+	row := q.db.QueryRowContext(ctx, getUserByUserName, userName)
+	var i StreamingUser
+	err := row.Scan(&i.ID, &i.UserName, &i.ApiToken)
+	return i, err
+}
+
 const getUserId = `-- name: GetUserId :one
-SELECT id FROM "pfoetchen"."user"
+SELECT id FROM "streaming"."user"
 WHERE "user_name" = $1
 `
 
@@ -74,7 +86,7 @@ func (q *Queries) GetUserId(ctx context.Context, userName string) (uuid.UUID, er
 }
 
 const upsertCollection = `-- name: UpsertCollection :exec
-INSERT INTO "pfoetchen"."collection" ("key", "streamer", "viewer", "json")
+INSERT INTO "streaming"."collection" ("key", "streamer", "viewer", "json")
 VALUES ($1, $2, $3, $4)
 ON CONFLICT ("key", "streamer", "viewer")
 DO UPDATE SET "json" = $4

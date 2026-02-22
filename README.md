@@ -1,6 +1,6 @@
 # Pfötchen API
 
-`erdbeerpfoetchen` (Pfötchen API) is a Go-based REST API service designed for managing "lamimi" collections. It provides a simple interface to store and retrieve JSON data with authentication and database persistence.
+`erdbeerpfoetchen` (Pfötchen API) is a Go-based REST API service designed for managing collections. It provides a simple interface to store and retrieve JSON data with authentication and database persistence.
 
 ## Features
 
@@ -31,7 +31,8 @@
 │   ├── database/           # Database connection and repository implementations
 │   │   └── model/          # Generated sqlc models
 │   ├── handle/             # HTTP request handlers
-│   └── middleware/         # HTTP middlewares (Auth)
+│   ├── middleware/         # HTTP middlewares (Auth)
+│   └── user/               # User domain models and services
 ├── schema/                 # Database schema and migrations
 │   ├── migrations/         # Goose migrations
 │   └── queries.sql         # SQLC queries
@@ -109,7 +110,7 @@ All endpoints require an `Authorization: Bearer <token>` header.
 - **URL**: `POST /api/v1/collection/{streamer_name}`
 - **Headers**:
   - `X-COLLECTION-KEY`: Unique collection identifier (required)
-  - `X-USER-KEY`: Unique user identifier (required)
+  - `X-USER-KEY`: Unique viewer identifier (required)
 - **Body**: JSON object
 - **Response**: `202 Accepted` on success.
 
@@ -117,7 +118,7 @@ All endpoints require an `Authorization: Bearer <token>` header.
 - **URL**: `GET /api/v1/collection/{streamer_name}`
 - **Headers**:
   - `X-COLLECTION-KEY`: Unique collection identifier (required)
-  - `X-USER-KEY`: Unique user identifier (required)
+  - `X-USER-KEY`: Unique viewer identifier (required)
 - **Response**: `200 OK` with JSON body.
 
 ## Development

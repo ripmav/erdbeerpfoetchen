@@ -1,7 +1,8 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE SCHEMA "pfoetchen";
-CREATE TABLE "pfoetchen"."collection" (
+CREATE SCHEMA "streaming";
+
+CREATE TABLE "streaming"."collection" (
     "key" varchar NOT NULL,
     "streamer" uuid NOT NULL,
     "viewer" varchar NOT NULL,
@@ -12,6 +13,7 @@ CREATE TABLE "pfoetchen"."collection" (
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE "pfoetchen"."collection";
-DROP SCHEMA "pfoetchen";
+DROP TABLE "streaming"."collection";
+
+DROP SCHEMA "streaming";
 -- +goose StatementEnd

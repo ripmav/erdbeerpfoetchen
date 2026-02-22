@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Pfötchen API
-  description: API for managing Lamimi collections.
+  description: API for managing collections.
   version: 1.0.0
 servers:
   - url: /api/v1
@@ -19,7 +19,7 @@ paths:
       - name: X-USER-KEY
         in: header
         required: true
-        description: Unique key for the user.
+        description: Unique key for the viewer.
         schema:
           type: string
       - name: X-COLLECTION-KEY
@@ -29,8 +29,8 @@ paths:
         schema:
           type: string
     get:
-      summary: Read Lamimi collections
-      description: Returns the Lamimi collection for the given streamer, user, and collection key.
+      summary: Read collections
+      description: Returns the collection for the given streamer, viewer, and collection key.
       security:
         - BearerAuth: []
       responses:
@@ -50,8 +50,8 @@ paths:
         '500':
           description: Internal server error
     post:
-      summary: Write Lamimi collections
-      description: Updates the Lamimi collection for the given streamer, user, and collection key.
+      summary: Write collections
+      description: Updates the collection for the given streamer, viewer, and collection key.
       security:
         - BearerAuth: []
       requestBody:

@@ -10,14 +10,14 @@ import (
 	"github.com/google/uuid"
 )
 
-type PfoetchenCollection struct {
+type StreamingCollection struct {
 	Key      string
 	Streamer uuid.UUID
 	Viewer   string
 	Json     json.RawMessage
 }
 
-type PfoetchenUser struct {
+type StreamingUser struct {
 	ID       uuid.UUID
 	UserName string
 	ApiToken uuid.UUID

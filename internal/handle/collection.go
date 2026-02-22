@@ -19,7 +19,7 @@ type CollectionService interface {
 }
 
 type UserService interface {
-	GetUser(ctx context.Context, streamerName string) (uuid.UUID, error)
+	GetUserApiToken(ctx context.Context, streamerName string) (uuid.UUID, error)
 }
 
 type CollectionHandler struct {
@@ -64,7 +64,7 @@ func (h *CollectionHandler) write(w http.ResponseWriter, r *http.Request) {
 
 	streamerName := r.PathValue("streamer_name")
 
-	userId, err := h.user.GetUser(ctx, streamerName)
+	userId, err := h.user.GetUserApiToken(ctx, streamerName)
 	if err != nil {
 		slog.Error("cannot get user", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -103,7 +103,7 @@ func (h *CollectionHandler) read(w http.ResponseWriter, r *http.Request) {
 
 	streamerName := r.PathValue("streamer_name")
 
-	userId, err := h.user.GetUser(ctx, streamerName)
+	userId, err := h.user.GetUserApiToken(ctx, streamerName)
 	if err != nil {
 		slog.Error("cannot get user", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
