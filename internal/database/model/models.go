@@ -11,10 +11,10 @@ import (
 )
 
 type StreamingCollection struct {
-	Key      string
-	Streamer uuid.UUID
-	Viewer   string
-	Json     json.RawMessage
+	CollectionKey string
+	Streamer      uuid.UUID
+	Viewer        string
+	Json          json.RawMessage
 }
 
 type StreamingUser struct {

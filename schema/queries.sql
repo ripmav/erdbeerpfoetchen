@@ -1,12 +1,12 @@
 -- name: UpsertCollection :exec
-INSERT INTO "streaming"."collection" ("key", "streamer", "viewer", "json")
+INSERT INTO "streaming"."collection" ("collection_key", "streamer", "viewer", "json")
 VALUES ($1, $2, $3, $4)
-ON CONFLICT ("key", "streamer", "viewer")
+ON CONFLICT ("collection_key", "streamer", "viewer")
 DO UPDATE SET "json" = $4;
 
 -- name: GetCollection :one
 SELECT * FROM "streaming"."collection"
-WHERE "key" = sqlc.arg(key)
+WHERE "collection_key" = sqlc.arg(key)
 AND "streamer" = sqlc.arg(streamer)
 AND "viewer" = sqlc.arg(user_hash);
 
