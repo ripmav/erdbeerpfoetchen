@@ -11,14 +11,16 @@ import (
 )
 
 type UserRepository struct {
-	db *DB
+	db          *DB
+	enableDebug bool
 }
 
 var _ user.Repository = (*UserRepository)(nil)
 
-func NewUserRepository(db *DB) *UserRepository {
+func NewUserRepository(db *DB, enableDebug bool) *UserRepository {
 	return &UserRepository{
-		db: db,
+		db:          db,
+		enableDebug: enableDebug,
 	}
 }
 

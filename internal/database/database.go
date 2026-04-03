@@ -24,15 +24,17 @@ func Connect(ctx context.Context, uri string, debug bool) (*DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %w", err)
 	}
-	defer func(conn *sql.DB) {
-		_ = conn.Close() // nolint: errcheck
-	}(conn)
 
 	if err := conn.PingContext(ctx); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	slog.Info("database connection established")
+	if debug {
+		slog.InfoContext(ctx, "database connection established with debug mode enabled sslmode=disable")
+
+	} else {
+		slog.InfoContext(ctx, "database connection established")
+	}
 
 	conn.SetMaxOpenConns(8)
 	conn.SetMaxIdleConns(8)

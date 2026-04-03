@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	"github.com/ripmav/erdbeerpfoetchen/internal/collection"
 	"github.com/ripmav/erdbeerpfoetchen/internal/database/model"
@@ -12,13 +13,14 @@ import (
 )
 
 type CollectionRepository struct {
-	db *DB
+	db          *DB
+	enableDebug bool
 }
 
 var _ collection.Repository = (*CollectionRepository)(nil)
 
-func NewCollectionRepository(db *DB) *CollectionRepository {
-	return &CollectionRepository{db: db}
+func NewCollectionRepository(db *DB, enableDebug bool) *CollectionRepository {
+	return &CollectionRepository{db: db, enableDebug: enableDebug}
 }
 
 func (repo *CollectionRepository) WriteCollection(ctx context.Context, key, user string, streamerId uuid.UUID, collection *collection.Collection) error {
@@ -26,10 +28,10 @@ func (repo *CollectionRepository) WriteCollection(ctx context.Context, key, user
 		q := model.New(tx)
 
 		writeParams := model.UpsertCollectionParams{
-			Key:      key,
-			Viewer:   user,
-			Streamer: streamerId,
-			Json:     collection.RawMessage,
+			CollectionKey: key,
+			Viewer:        user,
+			Streamer:      streamerId,
+			Json:          collection.RawMessage,
 		}
 
 		if err := q.UpsertCollection(ctx, writeParams); err != nil {
@@ -49,6 +51,10 @@ func (repo *CollectionRepository) ReadCollection(ctx context.Context, key, user 
 			Key:      key,
 			UserHash: user,
 			Streamer: streamerId,
+		}
+
+		if repo.enableDebug {
+			slog.InfoContext(ctx, "reading collection from database", "readParams", readParams)
 		}
 
 		sc, err := q.GetCollection(ctx, readParams)

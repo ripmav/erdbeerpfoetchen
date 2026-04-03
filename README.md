@@ -12,7 +12,7 @@
 
 ## Requirements
 
-- **Go**: 1.26 or higher
+- **Go**: 1.26.1 or higher
 - **PostgreSQL**: Used for data storage.
 - **SQLC**: For generating database code from SQL queries.
 - **Goose**: For running database migrations.
@@ -73,27 +73,27 @@
 
 The application is configured using command-line flags or environment variables (prefixed with `PFOETCHEN_`).
 
-| Flag | Environment Variable | Default | Description |
-|------|----------------------|---------|-------------|
-| `--debug` | `PFOETCHEN_DEBUG` | `false` | Enable debug mode and logging |
-| `--server.listen` | `PFOETCHEN_SERVER_LISTEN` | `:8080` | Server listen address |
-| `--server.unsafe` | `PFOETCHEN_SERVER_UNSAFE` | `false` | Allow insecure connections (HTTP) |
-| `--server.tls.cert` | `PFOETCHEN_SERVER_TLS_CERT_PATH` | - | Path to TLS certificate file |
-| `--server.tls.key` | `PFOETCHEN_SERVER_TLS_KEY_PATH` | - | Path to TLS key file |
-| `--database.uri` | `PFOETCHEN_DATABASE_URI` | - | PostgreSQL connection URI |
+| Flag                | Environment Variable             | Default | Description                       |
+|---------------------|----------------------------------|---------|-----------------------------------|
+| `--debug`           | `PFOETCHEN_DEBUG`                | `false` | Enable debug mode and logging     |
+| `--server.listen`   | `PFOETCHEN_SERVER_LISTEN`        | `:8080` | Server listen address             |
+| `--server.unsafe`   | `PFOETCHEN_SERVER_UNSAFE`        | `false` | Allow insecure connections (HTTP) |
+| `--server.tls.cert` | `PFOETCHEN_SERVER_TLS_CERT_PATH` | -       | Path to TLS certificate file      |
+| `--server.tls.key`  | `PFOETCHEN_SERVER_TLS_KEY_PATH`  | -       | Path to TLS key file              |
+| `--database.uri`    | `PFOETCHEN_DATABASE_URI`         | -       | PostgreSQL connection URI         |
 
 ## Running the API
 
 To start the API server:
 
 ```bash
-go run ./cmd/api api --database.uri "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+go run ./cmd/api api --database.uri "postgres://postgres:postgres@localhost:5432/postgres"
 ```
 
 Or using environment variables:
 
 ```bash
-export PFOETCHEN_DATABASE_URI="postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+export PFOETCHEN_DATABASE_URI="postgres://postgres:postgres@localhost:5432/postgres"
 go run ./cmd/api api
 ```
 

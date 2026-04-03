@@ -31,8 +31,8 @@ func (cmd *ApiCommand) Run(ctx context.Context, cfg *Config) error {
 		}
 	}()
 
-	collectionRepo := database.NewCollectionRepository(db)
-	userRepo := database.NewUserRepository(db)
+	collectionRepo := database.NewCollectionRepository(db, cfg.EnableDebug)
+	userRepo := database.NewUserRepository(db, cfg.EnableDebug)
 
 	collectionService := collection.New(collectionRepo)
 	userService := user.New(userRepo)
