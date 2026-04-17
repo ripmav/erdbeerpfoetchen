@@ -1,7 +1,6 @@
 package handle_test
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -12,56 +11,31 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/ripmav/erdbeerpfoetchen/internal/collection"
 	"github.com/ripmav/erdbeerpfoetchen/internal/database/model"
 	"github.com/ripmav/erdbeerpfoetchen/internal/handle"
+	"github.com/ripmav/erdbeerpfoetchen/internal/handle/mock"
 )
 
 const validAuthHeader = "Bearer my-super-secret-key"
 
-type mockCollectionService struct {
-	writeErr   error
-	readResult *collection.Collection
-	readErr    error
-}
-
-func (m *mockCollectionService) WriteCollection(_ context.Context, _, _ string, _ uuid.UUID, _ *collection.Collection) error {
-	return m.writeErr
-}
-
-func (m *mockCollectionService) ReadCollection(_ context.Context, _, _ string, _ uuid.UUID) (*collection.Collection, error) {
-	return m.readResult, m.readErr
-}
-
-type mockUserService struct {
-	apiToken    uuid.UUID
-	apiTokenErr error
-	user        *model.StreamingUser
-	userErr     error
-}
-
-func (m *mockUserService) GetUserApiToken(_ context.Context, _ string) (uuid.UUID, error) {
-	return m.apiToken, m.apiTokenErr
-}
-
-func (m *mockUserService) GetUserByUserName(_ context.Context, _ string) (*model.StreamingUser, error) {
-	return m.user, m.userErr
-}
-
-func installMux(svc *mockCollectionService, usr *mockUserService) *http.ServeMux {
+func installMux(svc handle.CollectionService, usr handle.UserService) *http.ServeMux {
 	mux := http.NewServeMux()
 	handle.NewCollectionHandler(svc, usr).Install(mux)
 	return mux
 }
 
 func TestNewCollectionHandler(t *testing.T) {
-	h := handle.NewCollectionHandler(&mockCollectionService{}, &mockUserService{})
+	ctrl := gomock.NewController(t)
+	h := handle.NewCollectionHandler(mock.NewMockCollectionService(ctrl), mock.NewMockUserService(ctrl))
 	require.NotNil(t, h, "NewCollectionHandler returned nil")
 }
 
 func TestCollectionHandler_Install(t *testing.T) {
-	mux := installMux(&mockCollectionService{}, &mockUserService{})
+	ctrl := gomock.NewController(t)
+	mux := installMux(mock.NewMockCollectionService(ctrl), mock.NewMockUserService(ctrl))
 	req := httptest.NewRequest(http.MethodGet, "/not-found", nil)
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)
@@ -85,39 +59,54 @@ func TestCollectionHandler_Write(t *testing.T) {
 	bothKeys := map[string]string{"X-USER-KEY": "user1", "X-COLLECTION-KEY": "col1"}
 
 	t.Run("missing X-USER-KEY returns 400", func(t *testing.T) {
-		mux := installMux(&mockCollectionService{}, &mockUserService{apiToken: streamerID})
+		ctrl := gomock.NewController(t)
+		mux := installMux(mock.NewMockCollectionService(ctrl), mock.NewMockUserService(ctrl))
 		rr := post(mux, `{}`, map[string]string{"X-COLLECTION-KEY": "col1"})
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
 	t.Run("missing X-COLLECTION-KEY returns 400", func(t *testing.T) {
-		mux := installMux(&mockCollectionService{}, &mockUserService{apiToken: streamerID})
+		ctrl := gomock.NewController(t)
+		mux := installMux(mock.NewMockCollectionService(ctrl), mock.NewMockUserService(ctrl))
 		rr := post(mux, `{}`, map[string]string{"X-USER-KEY": "user1"})
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
 	t.Run("invalid JSON body returns 400", func(t *testing.T) {
-		mux := installMux(&mockCollectionService{}, &mockUserService{apiToken: streamerID})
+		ctrl := gomock.NewController(t)
+		mux := installMux(mock.NewMockCollectionService(ctrl), mock.NewMockUserService(ctrl))
 		rr := post(mux, `not-json`, bothKeys)
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
 	t.Run("GetUserApiToken error returns 500", func(t *testing.T) {
-		usr := &mockUserService{apiTokenErr: errors.New("db error")}
-		mux := installMux(&mockCollectionService{}, usr)
+		ctrl := gomock.NewController(t)
+		svc := mock.NewMockCollectionService(ctrl)
+		usr := mock.NewMockUserService(ctrl)
+		usr.EXPECT().GetUserApiToken(gomock.Any(), gomock.Any()).Return(uuid.Nil, errors.New("db error"))
+		mux := installMux(svc, usr)
 		rr := post(mux, `{}`, bothKeys)
 		assert.Equal(t, http.StatusInternalServerError, rr.Code)
 	})
 
 	t.Run("WriteCollection error returns 500", func(t *testing.T) {
-		svc := &mockCollectionService{writeErr: errors.New("write error")}
-		mux := installMux(svc, &mockUserService{apiToken: streamerID})
+		ctrl := gomock.NewController(t)
+		svc := mock.NewMockCollectionService(ctrl)
+		usr := mock.NewMockUserService(ctrl)
+		usr.EXPECT().GetUserApiToken(gomock.Any(), gomock.Any()).Return(streamerID, nil)
+		svc.EXPECT().WriteCollection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("write error"))
+		mux := installMux(svc, usr)
 		rr := post(mux, `{}`, bothKeys)
 		assert.Equal(t, http.StatusInternalServerError, rr.Code)
 	})
 
 	t.Run("success returns 202", func(t *testing.T) {
-		mux := installMux(&mockCollectionService{}, &mockUserService{apiToken: streamerID})
+		ctrl := gomock.NewController(t)
+		svc := mock.NewMockCollectionService(ctrl)
+		usr := mock.NewMockUserService(ctrl)
+		usr.EXPECT().GetUserApiToken(gomock.Any(), gomock.Any()).Return(streamerID, nil)
+		svc.EXPECT().WriteCollection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+		mux := installMux(svc, usr)
 		rr := post(mux, `{}`, bothKeys)
 		assert.Equal(t, http.StatusAccepted, rr.Code)
 	})
@@ -143,33 +132,47 @@ func TestCollectionHandler_Read(t *testing.T) {
 	bothKeys := map[string]string{"X-USER-KEY": "user1", "X-COLLECTION-KEY": "col1"}
 
 	t.Run("missing X-USER-KEY returns 400", func(t *testing.T) {
-		mux := installMux(&mockCollectionService{readResult: c}, &mockUserService{user: u})
+		ctrl := gomock.NewController(t)
+		mux := installMux(mock.NewMockCollectionService(ctrl), mock.NewMockUserService(ctrl))
 		rr := get(mux, map[string]string{"X-COLLECTION-KEY": "col1"})
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
 	t.Run("missing X-COLLECTION-KEY returns 400", func(t *testing.T) {
-		mux := installMux(&mockCollectionService{readResult: c}, &mockUserService{user: u})
+		ctrl := gomock.NewController(t)
+		mux := installMux(mock.NewMockCollectionService(ctrl), mock.NewMockUserService(ctrl))
 		rr := get(mux, map[string]string{"X-USER-KEY": "user1"})
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
 	t.Run("GetUserByUserName error returns 500", func(t *testing.T) {
-		usr := &mockUserService{userErr: errors.New("db error")}
-		mux := installMux(&mockCollectionService{readResult: c}, usr)
+		ctrl := gomock.NewController(t)
+		svc := mock.NewMockCollectionService(ctrl)
+		usr := mock.NewMockUserService(ctrl)
+		usr.EXPECT().GetUserByUserName(gomock.Any(), gomock.Any()).Return(nil, errors.New("db error"))
+		mux := installMux(svc, usr)
 		rr := get(mux, bothKeys)
 		assert.Equal(t, http.StatusInternalServerError, rr.Code)
 	})
 
 	t.Run("ReadCollection error returns 500", func(t *testing.T) {
-		svc := &mockCollectionService{readErr: errors.New("read error")}
-		mux := installMux(svc, &mockUserService{user: u})
+		ctrl := gomock.NewController(t)
+		svc := mock.NewMockCollectionService(ctrl)
+		usr := mock.NewMockUserService(ctrl)
+		usr.EXPECT().GetUserByUserName(gomock.Any(), gomock.Any()).Return(u, nil)
+		svc.EXPECT().ReadCollection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("read error"))
+		mux := installMux(svc, usr)
 		rr := get(mux, bothKeys)
 		assert.Equal(t, http.StatusInternalServerError, rr.Code)
 	})
 
 	t.Run("success returns 200 with JSON body and headers", func(t *testing.T) {
-		mux := installMux(&mockCollectionService{readResult: c}, &mockUserService{user: u})
+		ctrl := gomock.NewController(t)
+		svc := mock.NewMockCollectionService(ctrl)
+		usr := mock.NewMockUserService(ctrl)
+		usr.EXPECT().GetUserByUserName(gomock.Any(), gomock.Any()).Return(u, nil)
+		svc.EXPECT().ReadCollection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(c, nil)
+		mux := installMux(svc, usr)
 		rr := get(mux, bothKeys)
 		assert.Equal(t, http.StatusOK, rr.Code)
 		assert.Equal(t, "application/json", rr.Header().Get("Content-Type"))
