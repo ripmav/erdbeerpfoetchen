@@ -5,9 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq" // also for side effects
+	"github.com/pressly/goose/v3"
+
+	"github.com/ripmav/erdbeerpfoetchen/schema"
 )
 
 type DB struct {
@@ -16,7 +20,12 @@ type DB struct {
 
 func Connect(ctx context.Context, uri string, debug bool) (*DB, error) {
 	if debug {
-		uri = fmt.Sprintf("%s?sslmode=disable", uri)
+		uri = strings.TrimRight(uri, "?")
+		if strings.Contains(uri, "?") {
+			uri = uri + "&sslmode=disable"
+		} else {
+			uri = uri + "?sslmode=disable"
+		}
 	}
 
 	conn, err := sql.Open("postgres", uri)
@@ -47,6 +56,17 @@ func Connect(ctx context.Context, uri string, debug bool) (*DB, error) {
 
 func (db *DB) Close() error {
 	return db.conn.Close()
+}
+
+func (db *DB) Migrate(ctx context.Context) error {
+	goose.SetBaseFS(schema.FS)
+	if err := goose.SetDialect("postgres"); err != nil {
+		return fmt.Errorf("goose set dialect: %w", err)
+	}
+	if err := goose.UpContext(ctx, db.conn, "migrations"); err != nil {
+		return fmt.Errorf("goose up: %w", err)
+	}
+	return nil
 }
 
 func (db *DB) Update(ctx context.Context, fn func(tx *sql.Tx) error) error {

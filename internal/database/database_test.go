@@ -14,35 +14,10 @@ import (
 	"github.com/ripmav/erdbeerpfoetchen/internal/database"
 )
 
-// initSQL contains the DDL statements required to set up the streaming schema
-// (mirrors the goose migrations in schema/migrations/).
-const initSQL = `
-CREATE SCHEMA "streaming";
-
-CREATE TABLE "streaming"."user" (
-    "id"         uuid    NOT NULL DEFAULT gen_random_uuid(),
-    "user_name"  varchar NOT NULL,
-    "api_token"  uuid    NOT NULL DEFAULT gen_random_uuid(),
-    PRIMARY KEY ("id")
-);
-
-CREATE TABLE "streaming"."collection" (
-    "collection_key" varchar NOT NULL,
-    "streamer"       uuid    NOT NULL,
-    "viewer"         varchar NOT NULL,
-    "json"           jsonb   NOT NULL DEFAULT '{}'::jsonb,
-    PRIMARY KEY ("collection_key", "streamer", "viewer"),
-    CONSTRAINT user_id_collection_fk
-        FOREIGN KEY ("streamer")
-        REFERENCES "streaming"."user" ("id")
-        ON DELETE CASCADE
-);
-`
-
 // startPostgres spins up a real PostgreSQL container, runs the schema
-// migrations, and returns the connection URI. The container is terminated
-// automatically when the test finishes.
-func startPostgres(t *testing.T) string {
+// migrations via db.Migrate, and returns a connected *database.DB.
+// The container and connection are terminated automatically when the test finishes.
+func startPostgres(t *testing.T) *database.DB {
 	t.Helper()
 	ctx := context.Background()
 
@@ -59,25 +34,19 @@ func startPostgres(t *testing.T) string {
 	uri, err := ctr.ConnectionString(ctx, "sslmode=disable")
 	require.NoError(t, err, "failed to get connection string")
 
-	// Apply schema migrations directly.
-	rawDB, err := sql.Open("postgres", uri)
-	require.NoError(t, err)
-	defer rawDB.Close()
+	db, err := database.Connect(ctx, uri, false)
+	require.NoError(t, err, "Connect")
+	t.Cleanup(func() { _ = db.Close() })
 
-	_, err = rawDB.ExecContext(ctx, initSQL)
-	require.NoError(t, err, "failed to apply schema migrations")
+	require.NoError(t, db.Migrate(ctx), "Migrate")
 
-	return uri
+	return db
 }
 
 // testDB opens a *database.DB backed by the test container.
 func testDB(t *testing.T) *database.DB {
 	t.Helper()
-	uri := startPostgres(t)
-	db, err := database.Connect(context.Background(), uri, false)
-	require.NoError(t, err, "Connect")
-	t.Cleanup(func() { _ = db.Close() })
-	return db
+	return startPostgres(t)
 }
 
 func TestConnect(t *testing.T) {
