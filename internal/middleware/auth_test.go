@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/ripmav/erdbeerpfoetchen/internal/middleware"
 )
 
@@ -20,9 +22,7 @@ func TestAuth_MissingAuthorizationHeader(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/collection/alice", nil)
 	rr := httptest.NewRecorder()
 	newMux().ServeHTTP(rr, req)
-	if rr.Code != http.StatusUnauthorized {
-		t.Errorf("got %d, want %d", rr.Code, http.StatusUnauthorized)
-	}
+	assert.Equal(t, http.StatusUnauthorized, rr.Code)
 }
 
 func TestAuth_MalformedAuthorizationHeader(t *testing.T) {
@@ -40,9 +40,7 @@ func TestAuth_MalformedAuthorizationHeader(t *testing.T) {
 			req.Header.Set("Authorization", tt.header)
 			rr := httptest.NewRecorder()
 			newMux().ServeHTTP(rr, req)
-			if rr.Code != http.StatusUnauthorized {
-				t.Errorf("got %d, want %d", rr.Code, http.StatusUnauthorized)
-			}
+			assert.Equal(t, http.StatusUnauthorized, rr.Code)
 		})
 	}
 }
@@ -54,9 +52,7 @@ func TestAuth_EmptyStreamerName(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer my-super-secret-key")
 	rr := httptest.NewRecorder()
 	handler(rr, req)
-	if rr.Code != http.StatusForbidden {
-		t.Errorf("got %d, want %d", rr.Code, http.StatusForbidden)
-	}
+	assert.Equal(t, http.StatusForbidden, rr.Code)
 }
 
 func TestAuth_InvalidToken(t *testing.T) {
@@ -64,9 +60,7 @@ func TestAuth_InvalidToken(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer wrong-token")
 	rr := httptest.NewRecorder()
 	newMux().ServeHTTP(rr, req)
-	if rr.Code != http.StatusForbidden {
-		t.Errorf("got %d, want %d", rr.Code, http.StatusForbidden)
-	}
+	assert.Equal(t, http.StatusForbidden, rr.Code)
 }
 
 func TestAuth_ValidToken(t *testing.T) {
@@ -74,9 +68,7 @@ func TestAuth_ValidToken(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer my-super-secret-key")
 	rr := httptest.NewRecorder()
 	newMux().ServeHTTP(rr, req)
-	if rr.Code != http.StatusOK {
-		t.Errorf("got %d, want %d", rr.Code, http.StatusOK)
-	}
+	assert.Equal(t, http.StatusOK, rr.Code)
 }
 
 func TestAuth_BearerPrefixCaseInsensitive(t *testing.T) {
@@ -86,9 +78,7 @@ func TestAuth_BearerPrefixCaseInsensitive(t *testing.T) {
 			req.Header.Set("Authorization", prefix+" my-super-secret-key")
 			rr := httptest.NewRecorder()
 			newMux().ServeHTTP(rr, req)
-			if rr.Code != http.StatusOK {
-				t.Errorf("got %d, want %d", rr.Code, http.StatusOK)
-			}
+			assert.Equal(t, http.StatusOK, rr.Code)
 		})
 	}
 }

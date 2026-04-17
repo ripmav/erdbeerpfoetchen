@@ -3,10 +3,12 @@ package user_test
 import (
 	"context"
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/ripmav/erdbeerpfoetchen/internal/database/model"
 	"github.com/ripmav/erdbeerpfoetchen/internal/user"
 )
@@ -33,9 +35,8 @@ func (m *mockRepo) GetUserByUserName(_ context.Context, _ string) (*model.Stream
 }
 
 func TestNew(t *testing.T) {
-	if user.New(&mockRepo{}) == nil {
-		t.Fatal("New returned nil")
-	}
+	svc := user.New(&mockRepo{})
+	require.NotNil(t, svc, "New returned nil")
 }
 
 func TestService_GetUserByUserName(t *testing.T) {
@@ -45,27 +46,17 @@ func TestService_GetUserByUserName(t *testing.T) {
 	t.Run("returns user from repo", func(t *testing.T) {
 		svc := user.New(&mockRepo{userByName: want})
 		got, err := svc.GetUserByUserName(ctx, "alice")
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if got.UserName != want.UserName {
-			t.Errorf("got %q, want %q", got.UserName, want.UserName)
-		}
+		require.NoError(t, err)
+		assert.Equal(t, want.UserName, got.UserName)
 	})
 
 	t.Run("wraps repo error with prefix", func(t *testing.T) {
 		repoErr := errors.New("db error")
 		svc := user.New(&mockRepo{userByNameErr: repoErr})
 		_, err := svc.GetUserByUserName(ctx, "alice")
-		if err == nil {
-			t.Fatal("expected error, got nil")
-		}
-		if !errors.Is(err, repoErr) {
-			t.Errorf("errors.Is mismatch: got %v", err)
-		}
-		if !strings.HasPrefix(err.Error(), "cannot get user by username:") {
-			t.Errorf("expected prefix 'cannot get user by username:', got %q", err.Error())
-		}
+		require.Error(t, err)
+		assert.ErrorIs(t, err, repoErr)
+		assert.Contains(t, err.Error(), "cannot get user by username:")
 	})
 }
 
@@ -77,30 +68,18 @@ func TestService_GetUserById(t *testing.T) {
 	t.Run("returns user from repo", func(t *testing.T) {
 		svc := user.New(&mockRepo{userByID: want})
 		got, err := svc.GetUserById(ctx, id)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if got.ID != want.ID {
-			t.Errorf("got %v, want %v", got.ID, want.ID)
-		}
+		require.NoError(t, err)
+		assert.Equal(t, want.ID, got.ID)
 	})
 
 	t.Run("returns nil and wrapped error on failure", func(t *testing.T) {
 		repoErr := errors.New("db error")
 		svc := user.New(&mockRepo{userByIDErr: repoErr})
 		got, err := svc.GetUserById(ctx, id)
-		if got != nil {
-			t.Errorf("expected nil user, got %v", got)
-		}
-		if err == nil {
-			t.Fatal("expected error, got nil")
-		}
-		if !errors.Is(err, repoErr) {
-			t.Errorf("errors.Is mismatch: got %v", err)
-		}
-		if !strings.HasPrefix(err.Error(), "cannot get user by id:") {
-			t.Errorf("expected prefix 'cannot get user by id:', got %q", err.Error())
-		}
+		assert.Nil(t, got)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, repoErr)
+		assert.Contains(t, err.Error(), "cannot get user by id:")
 	})
 }
 
@@ -111,29 +90,17 @@ func TestService_GetUserApiToken(t *testing.T) {
 	t.Run("returns token from repo", func(t *testing.T) {
 		svc := user.New(&mockRepo{apiToken: wantToken})
 		got, err := svc.GetUserApiToken(ctx, "alice")
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if got != wantToken {
-			t.Errorf("got %v, want %v", got, wantToken)
-		}
+		require.NoError(t, err)
+		assert.Equal(t, wantToken, got)
 	})
 
 	t.Run("returns uuid.Nil and wrapped error on failure", func(t *testing.T) {
 		repoErr := errors.New("db error")
 		svc := user.New(&mockRepo{apiTokenErr: repoErr})
 		got, err := svc.GetUserApiToken(ctx, "alice")
-		if got != uuid.Nil {
-			t.Errorf("expected uuid.Nil, got %v", got)
-		}
-		if err == nil {
-			t.Fatal("expected error, got nil")
-		}
-		if !errors.Is(err, repoErr) {
-			t.Errorf("errors.Is mismatch: got %v", err)
-		}
-		if !strings.HasPrefix(err.Error(), "cannot get user api token:") {
-			t.Errorf("expected prefix 'cannot get user api token:', got %q", err.Error())
-		}
+		assert.Equal(t, uuid.Nil, got)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, repoErr)
+		assert.Contains(t, err.Error(), "cannot get user api token:")
 	})
 }

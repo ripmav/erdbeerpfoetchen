@@ -10,6 +10,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/ripmav/erdbeerpfoetchen/internal/collection"
 	"github.com/ripmav/erdbeerpfoetchen/internal/database/model"
 	"github.com/ripmav/erdbeerpfoetchen/internal/handle"
@@ -54,20 +57,15 @@ func installMux(svc *mockCollectionService, usr *mockUserService) *http.ServeMux
 
 func TestNewCollectionHandler(t *testing.T) {
 	h := handle.NewCollectionHandler(&mockCollectionService{}, &mockUserService{})
-	if h == nil {
-		t.Fatal("NewCollectionHandler returned nil")
-	}
+	require.NotNil(t, h, "NewCollectionHandler returned nil")
 }
 
 func TestCollectionHandler_Install(t *testing.T) {
 	mux := installMux(&mockCollectionService{}, &mockUserService{})
-	// Both routes should be registered; a request to an unregistered path gets 404.
 	req := httptest.NewRequest(http.MethodGet, "/not-found", nil)
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)
-	if rr.Code != http.StatusNotFound {
-		t.Errorf("got %d, want %d", rr.Code, http.StatusNotFound)
-	}
+	assert.Equal(t, http.StatusNotFound, rr.Code)
 }
 
 func TestCollectionHandler_Write(t *testing.T) {
@@ -89,51 +87,39 @@ func TestCollectionHandler_Write(t *testing.T) {
 	t.Run("missing X-USER-KEY returns 400", func(t *testing.T) {
 		mux := installMux(&mockCollectionService{}, &mockUserService{apiToken: streamerID})
 		rr := post(mux, `{}`, map[string]string{"X-COLLECTION-KEY": "col1"})
-		if rr.Code != http.StatusBadRequest {
-			t.Errorf("got %d, want %d", rr.Code, http.StatusBadRequest)
-		}
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
 	t.Run("missing X-COLLECTION-KEY returns 400", func(t *testing.T) {
 		mux := installMux(&mockCollectionService{}, &mockUserService{apiToken: streamerID})
 		rr := post(mux, `{}`, map[string]string{"X-USER-KEY": "user1"})
-		if rr.Code != http.StatusBadRequest {
-			t.Errorf("got %d, want %d", rr.Code, http.StatusBadRequest)
-		}
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
 	t.Run("invalid JSON body returns 400", func(t *testing.T) {
 		mux := installMux(&mockCollectionService{}, &mockUserService{apiToken: streamerID})
 		rr := post(mux, `not-json`, bothKeys)
-		if rr.Code != http.StatusBadRequest {
-			t.Errorf("got %d, want %d", rr.Code, http.StatusBadRequest)
-		}
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
 	t.Run("GetUserApiToken error returns 500", func(t *testing.T) {
 		usr := &mockUserService{apiTokenErr: errors.New("db error")}
 		mux := installMux(&mockCollectionService{}, usr)
 		rr := post(mux, `{}`, bothKeys)
-		if rr.Code != http.StatusInternalServerError {
-			t.Errorf("got %d, want %d", rr.Code, http.StatusInternalServerError)
-		}
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
 	})
 
 	t.Run("WriteCollection error returns 500", func(t *testing.T) {
 		svc := &mockCollectionService{writeErr: errors.New("write error")}
 		mux := installMux(svc, &mockUserService{apiToken: streamerID})
 		rr := post(mux, `{}`, bothKeys)
-		if rr.Code != http.StatusInternalServerError {
-			t.Errorf("got %d, want %d", rr.Code, http.StatusInternalServerError)
-		}
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
 	})
 
 	t.Run("success returns 202", func(t *testing.T) {
 		mux := installMux(&mockCollectionService{}, &mockUserService{apiToken: streamerID})
 		rr := post(mux, `{}`, bothKeys)
-		if rr.Code != http.StatusAccepted {
-			t.Errorf("got %d, want %d", rr.Code, http.StatusAccepted)
-		}
+		assert.Equal(t, http.StatusAccepted, rr.Code)
 	})
 }
 
@@ -159,48 +145,34 @@ func TestCollectionHandler_Read(t *testing.T) {
 	t.Run("missing X-USER-KEY returns 400", func(t *testing.T) {
 		mux := installMux(&mockCollectionService{readResult: c}, &mockUserService{user: u})
 		rr := get(mux, map[string]string{"X-COLLECTION-KEY": "col1"})
-		if rr.Code != http.StatusBadRequest {
-			t.Errorf("got %d, want %d", rr.Code, http.StatusBadRequest)
-		}
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
 	t.Run("missing X-COLLECTION-KEY returns 400", func(t *testing.T) {
 		mux := installMux(&mockCollectionService{readResult: c}, &mockUserService{user: u})
 		rr := get(mux, map[string]string{"X-USER-KEY": "user1"})
-		if rr.Code != http.StatusBadRequest {
-			t.Errorf("got %d, want %d", rr.Code, http.StatusBadRequest)
-		}
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
 
 	t.Run("GetUserByUserName error returns 500", func(t *testing.T) {
 		usr := &mockUserService{userErr: errors.New("db error")}
 		mux := installMux(&mockCollectionService{readResult: c}, usr)
 		rr := get(mux, bothKeys)
-		if rr.Code != http.StatusInternalServerError {
-			t.Errorf("got %d, want %d", rr.Code, http.StatusInternalServerError)
-		}
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
 	})
 
 	t.Run("ReadCollection error returns 500", func(t *testing.T) {
 		svc := &mockCollectionService{readErr: errors.New("read error")}
 		mux := installMux(svc, &mockUserService{user: u})
 		rr := get(mux, bothKeys)
-		if rr.Code != http.StatusInternalServerError {
-			t.Errorf("got %d, want %d", rr.Code, http.StatusInternalServerError)
-		}
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
 	})
 
 	t.Run("success returns 200 with JSON body and headers", func(t *testing.T) {
 		mux := installMux(&mockCollectionService{readResult: c}, &mockUserService{user: u})
 		rr := get(mux, bothKeys)
-		if rr.Code != http.StatusOK {
-			t.Errorf("got %d, want %d", rr.Code, http.StatusOK)
-		}
-		if ct := rr.Header().Get("Content-Type"); ct != "application/json" {
-			t.Errorf("Content-Type: got %q, want %q", ct, "application/json")
-		}
-		if body := rr.Body.String(); body != string(rawJSON) {
-			t.Errorf("body: got %q, want %q", body, string(rawJSON))
-		}
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Equal(t, "application/json", rr.Header().Get("Content-Type"))
+		assert.Equal(t, string(rawJSON), rr.Body.String())
 	})
 }
