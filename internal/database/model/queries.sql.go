@@ -13,7 +13,7 @@ import (
 )
 
 const getCollection = `-- name: GetCollection :one
-SELECT collection_key, streamer, viewer, json FROM "streaming"."collection"
+SELECT collection_key, streamer, viewer, json, collection_type FROM "streaming"."collection"
 WHERE "collection_key" = $1
 AND "streamer" = $2
 AND "viewer" = $3
@@ -33,6 +33,7 @@ func (q *Queries) GetCollection(ctx context.Context, arg GetCollectionParams) (S
 		&i.Streamer,
 		&i.Viewer,
 		&i.Json,
+		&i.CollectionType,
 	)
 	return i, err
 }
@@ -86,17 +87,18 @@ func (q *Queries) GetUserId(ctx context.Context, userName string) (uuid.UUID, er
 }
 
 const upsertCollection = `-- name: UpsertCollection :exec
-INSERT INTO "streaming"."collection" ("collection_key", "streamer", "viewer", "json")
-VALUES ($1, $2, $3, $4)
+INSERT INTO "streaming"."collection" ("collection_key", "streamer", "viewer", "json", "collection_type")
+VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT ("collection_key", "streamer", "viewer")
-DO UPDATE SET "json" = $4
+DO UPDATE SET "json" = $4, "collection_type" = $5
 `
 
 type UpsertCollectionParams struct {
-	CollectionKey string
-	Streamer      uuid.UUID
-	Viewer        string
-	Json          json.RawMessage
+	CollectionKey  string
+	Streamer       uuid.UUID
+	Viewer         string
+	Json           json.RawMessage
+	CollectionType string
 }
 
 func (q *Queries) UpsertCollection(ctx context.Context, arg UpsertCollectionParams) error {
@@ -105,6 +107,7 @@ func (q *Queries) UpsertCollection(ctx context.Context, arg UpsertCollectionPara
 		arg.Streamer,
 		arg.Viewer,
 		arg.Json,
+		arg.CollectionType,
 	)
 	return err
 }
