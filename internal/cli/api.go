@@ -10,6 +10,7 @@ import (
 	"github.com/ripmav/erdbeerpfoetchen/internal/collection"
 	"github.com/ripmav/erdbeerpfoetchen/internal/database"
 	"github.com/ripmav/erdbeerpfoetchen/internal/handle"
+	"github.com/ripmav/erdbeerpfoetchen/internal/middleware"
 	"github.com/ripmav/erdbeerpfoetchen/internal/user"
 )
 
@@ -37,7 +38,9 @@ func (cmd *ApiCommand) Run(ctx context.Context, cfg *Config) error {
 	collectionService := collection.New(collectionRepo)
 	userService := user.New(userRepo)
 
-	collectionHandler := handle.NewCollectionHandler(collectionService, userService)
+	rateLimiter := middleware.NewRateLimiter(10, 20)
+
+	collectionHandler := handle.NewCollectionHandler(collectionService, userService, rateLimiter)
 	collectionHandler.Install(mux)
 
 	if err := cfg.ListenAndServe(ctx, mux); err != nil {

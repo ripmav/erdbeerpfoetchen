@@ -25,14 +25,16 @@ type UserService interface {
 }
 
 type CollectionHandler struct {
-	service CollectionService
-	user    UserService
+	service     CollectionService
+	user        UserService
+	rateLimiter *middleware.RateLimiter
 }
 
-func NewCollectionHandler(service CollectionService, user UserService) *CollectionHandler {
+func NewCollectionHandler(service CollectionService, user UserService, rateLimiter *middleware.RateLimiter) *CollectionHandler {
 	return &CollectionHandler{
-		service: service,
-		user:    user,
+		service:     service,
+		user:        user,
+		rateLimiter: rateLimiter,
 	}
 }
 
@@ -56,6 +58,11 @@ func (h *CollectionHandler) write(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	collectionType := r.Header.Get("X-COLLECTION-TYPE")
+	if collectionType == "" {
+		collectionType = "default"
+	}
+
 	c, err := decode(r.Body)
 
 	if err != nil {
@@ -63,6 +70,8 @@ func (h *CollectionHandler) write(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	c.CollectionType = collectionType
 
 	streamerName := r.PathValue("streamer_name")
 
@@ -135,8 +144,8 @@ func (h *CollectionHandler) read(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CollectionHandler) Install(mux *http.ServeMux) {
-	mux.HandleFunc("POST /api/v1/collection/{streamer_name}", middleware.Auth(h.write))
-	mux.HandleFunc("GET /api/v1/collection/{streamer_name}", middleware.Auth(h.read))
+	mux.HandleFunc("POST /api/v1/collection/{streamer_name}", h.rateLimiter.Limit(middleware.Auth(h.user, h.write)))
+	mux.HandleFunc("GET /api/v1/collection/{streamer_name}", h.rateLimiter.Limit(middleware.Auth(h.user, h.read)))
 }
 
 func decode(r io.Reader) (*collection.Collection, error) {
