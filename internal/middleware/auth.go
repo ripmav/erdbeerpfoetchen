@@ -5,9 +5,16 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
-func Auth(next http.HandlerFunc) http.HandlerFunc {
+// TokenValidator fetches the API token stored for a given streamer name.
+type TokenValidator interface {
+	GetUserApiToken(ctx context.Context, userName string) (uuid.UUID, error)
+}
+
+func Auth(validator TokenValidator, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := extractToken(r)
 		if err != nil {
@@ -22,7 +29,7 @@ func Auth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		if !isValid(r.Context(), token, streamerName) {
+		if !isValid(r.Context(), validator, token, streamerName) {
 			http.Error(w, "Forbidden: Invalid token", http.StatusForbidden)
 			return
 		}
@@ -46,9 +53,14 @@ func extractToken(r *http.Request) (string, error) {
 	return parts[1], nil
 }
 
-func isValid(ctx context.Context, token, streamerName string) bool {
-
-	// TODO: Validate the token against a database
-	const secretToken = "my-super-secret-key"
-	return token == secretToken
+func isValid(ctx context.Context, validator TokenValidator, token, streamerName string) bool {
+	tokenUUID, err := uuid.Parse(token)
+	if err != nil {
+		return false
+	}
+	apiToken, err := validator.GetUserApiToken(ctx, streamerName)
+	if err != nil {
+		return false
+	}
+	return tokenUUID == apiToken
 }
