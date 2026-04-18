@@ -22,7 +22,7 @@ func startPostgres(t *testing.T) *database.DB {
 	ctx := context.Background()
 
 	ctr, err := postgres.Run(ctx,
-		"postgres:17-alpine",
+		"postgres:18-alpine",
 		postgres.WithDatabase("testdb"),
 		postgres.WithUsername("testuser"),
 		postgres.WithPassword("testpass"),
@@ -56,7 +56,7 @@ func TestConnect(t *testing.T) {
 func TestConnect_DebugMode(t *testing.T) {
 	ctx := context.Background()
 	ctr, err := postgres.Run(ctx,
-		"postgres:17-alpine",
+		"postgres:18-alpine",
 		postgres.WithDatabase("testdb"),
 		postgres.WithUsername("testuser"),
 		postgres.WithPassword("testpass"),

@@ -67,7 +67,9 @@ func TestUserRepository_GetUserById_NotFound(t *testing.T) {
 	db := testDB(t)
 	repo := database.NewUserRepository(db, false)
 
-	_, err := repo.GetUserById(ctx, uuid.New())
+	randID, newErr := uuid.NewV7()
+	require.NoError(t, newErr)
+	_, err := repo.GetUserById(ctx, randID)
 	require.Error(t, err)
 }
 

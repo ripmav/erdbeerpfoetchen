@@ -70,6 +70,8 @@ func TestCollectionRepository_ReadCollection_NotFound(t *testing.T) {
 	db := testDB(t)
 	repo := database.NewCollectionRepository(db, false)
 
-	_, err := repo.ReadCollection(ctx, "missing", "nobody", uuid.New())
+	randID, newErr := uuid.NewV7()
+	require.NoError(t, newErr)
+	_, err := repo.ReadCollection(ctx, "missing", "nobody", randID)
 	require.Error(t, err)
 }

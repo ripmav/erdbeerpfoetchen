@@ -22,7 +22,8 @@ func TestNew(t *testing.T) {
 
 func TestService_WriteCollection(t *testing.T) {
 	ctx := context.Background()
-	id := uuid.New()
+	id, err := uuid.NewV7()
+	require.NoError(t, err)
 	c := &collection.Collection{RawMessage: []byte(`{}`)}
 
 	t.Run("delegates to repo successfully", func(t *testing.T) {
@@ -49,7 +50,8 @@ func TestService_WriteCollection(t *testing.T) {
 
 func TestService_ReadCollection(t *testing.T) {
 	ctx := context.Background()
-	id := uuid.New()
+	id, err := uuid.NewV7()
+	require.NoError(t, err)
 
 	t.Run("returns collection from repo", func(t *testing.T) {
 		ctrl := gomock.NewController(t)

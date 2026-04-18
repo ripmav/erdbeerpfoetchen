@@ -49,7 +49,8 @@ func TestCollectionHandler_Install(t *testing.T) {
 }
 
 func TestCollectionHandler_Write(t *testing.T) {
-	streamerID := uuid.New()
+	streamerID, err := uuid.NewV7()
+	require.NoError(t, err)
 
 	post := func(mux *http.ServeMux, body string, headers map[string]string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/collection/alice", strings.NewReader(body))
@@ -134,7 +135,8 @@ func TestCollectionHandler_Write(t *testing.T) {
 }
 
 func TestCollectionHandler_Read(t *testing.T) {
-	streamerID := uuid.New()
+	streamerID, err := uuid.NewV7()
+	require.NoError(t, err)
 	rawJSON := json.RawMessage(`{"foo":"bar"}`)
 	c := &collection.Collection{RawMessage: rawJSON}
 	u := &model.StreamingUser{ID: streamerID}
