@@ -1,0 +1,34 @@
+version: "2"
+linters:
+  enable:
+    - govet #DoD
+    - ineffassign #DoD
+    - staticcheck #DoD
+    - godox #DoD
+    - bidichk #DoD
+    - errcheck #DoD, M24r
+    - errorlint #M24r
+    - predeclared #M24r
+    - bodyclose #M24r
+    - whitespace #M24r
+    - gosec #M24r
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
