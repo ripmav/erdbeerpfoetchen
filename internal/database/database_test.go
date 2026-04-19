@@ -33,7 +33,7 @@ func TestDB_Update_NoOp(t *testing.T) {
 	require.NoError(t, err)
 	db, err := database.Connect(t.Context(), container.URI, true)
 	assert.NoError(t, err)
-	db.Update(context.Background(), func(_ *sql.Tx) error { return nil })
+	err = db.Update(context.Background(), func(_ *sql.Tx) error { return nil })
 	assert.NoError(t, err, "Update no-op")
 }
 

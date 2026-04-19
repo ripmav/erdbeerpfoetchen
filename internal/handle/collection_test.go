@@ -97,7 +97,7 @@ func TestCollectionHandler_Write(t *testing.T) {
 		svc := mock.NewMockCollectionService(ctrl)
 		usr := mock.NewMockUserService(ctrl)
 		gomock.InOrder(
-			usr.EXPECT().GetUserApiToken(gomock.Any(), gomock.Any()).Return(testToken, nil),             // auth
+			usr.EXPECT().GetUserApiToken(gomock.Any(), gomock.Any()).Return(testToken, nil),                   // auth
 			usr.EXPECT().GetUserApiToken(gomock.Any(), gomock.Any()).Return(uuid.Nil, errors.New("db error")), // handler
 		)
 		mux := installMux(svc, usr)
@@ -110,7 +110,7 @@ func TestCollectionHandler_Write(t *testing.T) {
 		svc := mock.NewMockCollectionService(ctrl)
 		usr := mock.NewMockUserService(ctrl)
 		gomock.InOrder(
-			usr.EXPECT().GetUserApiToken(gomock.Any(), gomock.Any()).Return(testToken, nil),   // auth
+			usr.EXPECT().GetUserApiToken(gomock.Any(), gomock.Any()).Return(testToken, nil),  // auth
 			usr.EXPECT().GetUserApiToken(gomock.Any(), gomock.Any()).Return(streamerID, nil), // handler
 		)
 		svc.EXPECT().WriteCollection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("write error"))
@@ -124,7 +124,7 @@ func TestCollectionHandler_Write(t *testing.T) {
 		svc := mock.NewMockCollectionService(ctrl)
 		usr := mock.NewMockUserService(ctrl)
 		gomock.InOrder(
-			usr.EXPECT().GetUserApiToken(gomock.Any(), gomock.Any()).Return(testToken, nil),   // auth
+			usr.EXPECT().GetUserApiToken(gomock.Any(), gomock.Any()).Return(testToken, nil),  // auth
 			usr.EXPECT().GetUserApiToken(gomock.Any(), gomock.Any()).Return(streamerID, nil), // handler
 		)
 		svc.EXPECT().WriteCollection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)

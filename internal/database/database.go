@@ -40,7 +40,6 @@ func Connect(ctx context.Context, uri string, debug bool) (*DB, error) {
 
 	if debug {
 		slog.InfoContext(ctx, "database connection established with debug mode enabled sslmode=disable")
-
 	} else {
 		slog.InfoContext(ctx, "database connection established")
 	}
