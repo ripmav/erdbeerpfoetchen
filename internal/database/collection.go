@@ -27,11 +27,17 @@ func (repo *CollectionRepository) WriteCollection(ctx context.Context, key, user
 	return repo.db.Update(ctx, func(tx *sql.Tx) error {
 		q := model.New(tx)
 
+		collectionType := collection.CollectionType
+		if collectionType == "" {
+			collectionType = "default"
+		}
+
 		writeParams := model.UpsertCollectionParams{
-			CollectionKey: key,
-			Viewer:        user,
-			Streamer:      streamerId,
-			Json:          collection.RawMessage,
+			CollectionKey:  key,
+			Viewer:         user,
+			Streamer:       streamerId,
+			Json:           collection.RawMessage,
+			CollectionType: collectionType,
 		}
 
 		if err := q.UpsertCollection(ctx, writeParams); err != nil {
@@ -64,6 +70,7 @@ func (repo *CollectionRepository) ReadCollection(ctx context.Context, key, user 
 		}
 
 		c.RawMessage = sc.Json
+		c.CollectionType = sc.CollectionType
 
 		return nil
 	})

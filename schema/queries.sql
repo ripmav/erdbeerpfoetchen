@@ -1,8 +1,8 @@
 -- name: UpsertCollection :exec
-INSERT INTO "streaming"."collection" ("collection_key", "streamer", "viewer", "json")
-VALUES ($1, $2, $3, $4)
+INSERT INTO "streaming"."collection" ("collection_key", "streamer", "viewer", "json", "collection_type")
+VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT ("collection_key", "streamer", "viewer")
-DO UPDATE SET "json" = $4;
+DO UPDATE SET "json" = $4, "collection_type" = $5;
 
 -- name: GetCollection :one
 SELECT * FROM "streaming"."collection"

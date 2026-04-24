@@ -50,7 +50,8 @@ func TestService_GetUserByUserName(t *testing.T) {
 
 func TestService_GetUserById(t *testing.T) {
 	ctx := context.Background()
-	id := uuid.New()
+	id, err := uuid.NewV7()
+	require.NoError(t, err)
 	want := &model.StreamingUser{ID: id}
 
 	t.Run("returns user from repo", func(t *testing.T) {
