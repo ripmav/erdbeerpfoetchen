@@ -29,7 +29,7 @@ func insertUser(t *testing.T, db *database.DB, userName string) (id uuid.UUID, a
 func TestUserRepository_GetUserByUserName_HappyPath(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	repo := database.NewUserRepository(db, false)
 
@@ -44,7 +44,7 @@ func TestUserRepository_GetUserByUserName_HappyPath(t *testing.T) {
 func TestUserRepository_GetUserByUserName_NotFound(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	repo := database.NewUserRepository(db, false)
 
@@ -56,7 +56,7 @@ func TestUserRepository_GetUserByUserName_NotFound(t *testing.T) {
 func TestUserRepository_GetUserById_HappyPath(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	repo := database.NewUserRepository(db, false)
 
@@ -71,7 +71,7 @@ func TestUserRepository_GetUserById_HappyPath(t *testing.T) {
 func TestUserRepository_GetUserById_NotFound(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	repo := database.NewUserRepository(db, false)
 
@@ -84,7 +84,7 @@ func TestUserRepository_GetUserById_NotFound(t *testing.T) {
 func TestUserRepository_GetUserApiToken_HappyPath(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	repo := database.NewUserRepository(db, false)
 
@@ -98,7 +98,7 @@ func TestUserRepository_GetUserApiToken_HappyPath(t *testing.T) {
 func TestUserRepository_GetUserApiToken_NotFound(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	repo := database.NewUserRepository(db, false)
 

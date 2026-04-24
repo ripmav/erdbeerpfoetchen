@@ -31,7 +31,7 @@ func TestDB_Close(t *testing.T) {
 func TestDB_Update_NoOp(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	err = db.Update(context.Background(), func(_ *sql.Tx) error { return nil })
 	assert.NoError(t, err, "Update no-op")
@@ -40,7 +40,7 @@ func TestDB_Update_NoOp(t *testing.T) {
 func TestDB_Read_NoOp(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	err = db.Read(context.Background(), func(_ *sql.Tx) error { return nil })
 	assert.NoError(t, err, "Read no-op")
@@ -49,7 +49,7 @@ func TestDB_Read_NoOp(t *testing.T) {
 func TestDB_Update_FnError(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	fnErr := errors.New("fn error")
 	err = db.Update(context.Background(), func(_ *sql.Tx) error { return fnErr })
@@ -60,7 +60,7 @@ func TestDB_Update_FnError(t *testing.T) {
 func TestDB_Read_FnError(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	fnErr := errors.New("fn error")
 	err = db.Read(context.Background(), func(_ *sql.Tx) error { return fnErr })
@@ -71,7 +71,7 @@ func TestDB_Read_FnError(t *testing.T) {
 func TestDB_Update_ContextCancelled(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancelled before use
@@ -82,7 +82,7 @@ func TestDB_Update_ContextCancelled(t *testing.T) {
 func TestNewCollectionRepository(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	repo := database.NewCollectionRepository(db, false)
 	require.NotNil(t, repo, "NewCollectionRepository returned nil")
@@ -91,7 +91,7 @@ func TestNewCollectionRepository(t *testing.T) {
 func TestNewUserRepository(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	repo := database.NewUserRepository(db, false)
 	require.NotNil(t, repo, "NewUserRepository returned nil")

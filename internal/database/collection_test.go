@@ -16,7 +16,7 @@ import (
 func TestCollectionRepository_WriteCollection(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	repo := database.NewCollectionRepository(db, false)
 
@@ -32,7 +32,7 @@ func TestCollectionRepository_WriteCollection(t *testing.T) {
 func TestCollectionRepository_WriteCollection_Upsert(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	repo := database.NewCollectionRepository(db, false)
 
@@ -55,7 +55,7 @@ func TestCollectionRepository_WriteCollection_Upsert(t *testing.T) {
 func TestCollectionRepository_ReadCollection(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	repo := database.NewCollectionRepository(db, false)
 
@@ -74,7 +74,7 @@ func TestCollectionRepository_ReadCollection(t *testing.T) {
 func TestCollectionRepository_ReadCollection_NotFound(t *testing.T) {
 	container, err := sqltest.CreateContainer(t.Context())
 	require.NoError(t, err)
-	db, err := database.Connect(t.Context(), container.URI, true)
+	db, err := database.ConnectAndMigrate(t.Context(), container.URI, true)
 	assert.NoError(t, err)
 	repo := database.NewCollectionRepository(db, false)
 

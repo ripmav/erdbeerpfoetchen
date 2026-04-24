@@ -53,6 +53,17 @@ func Connect(ctx context.Context, uri string, debug bool) (*DB, error) {
 	return db, nil
 }
 
+func ConnectAndMigrate(ctx context.Context, uri string, debug bool) (*DB, error) {
+	db, err := Connect(ctx, uri, debug)
+	if err != nil {
+		return nil, err
+	}
+	if err := db.Migrate(ctx); err != nil {
+		return nil, fmt.Errorf("migrate: %w", err)
+	}
+	return db, nil
+}
+
 func (db *DB) Close() error {
 	return db.conn.Close()
 }
