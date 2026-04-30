@@ -51,26 +51,36 @@ func (q *Queries) GetUserApiToken(ctx context.Context, userName string) (uuid.UU
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, user_name, api_token FROM "streaming"."user"
+SELECT id, user_name, api_token, rate_limit_per_minute FROM "streaming"."user"
 WHERE "id" = $1
 `
 
 func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (StreamingUser, error) {
 	row := q.db.QueryRowContext(ctx, getUserById, id)
 	var i StreamingUser
-	err := row.Scan(&i.ID, &i.UserName, &i.ApiToken)
+	err := row.Scan(
+		&i.ID,
+		&i.UserName,
+		&i.ApiToken,
+		&i.RateLimitPerMinute,
+	)
 	return i, err
 }
 
 const getUserByUserName = `-- name: GetUserByUserName :one
-SELECT id, user_name, api_token FROM "streaming"."user"
+SELECT id, user_name, api_token, rate_limit_per_minute FROM "streaming"."user"
 WHERE "user_name" = $1
 `
 
 func (q *Queries) GetUserByUserName(ctx context.Context, userName string) (StreamingUser, error) {
 	row := q.db.QueryRowContext(ctx, getUserByUserName, userName)
 	var i StreamingUser
-	err := row.Scan(&i.ID, &i.UserName, &i.ApiToken)
+	err := row.Scan(
+		&i.ID,
+		&i.UserName,
+		&i.ApiToken,
+		&i.RateLimitPerMinute,
+	)
 	return i, err
 }
 
@@ -84,6 +94,18 @@ func (q *Queries) GetUserId(ctx context.Context, userName string) (uuid.UUID, er
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
+}
+
+const getUserRateLimit = `-- name: GetUserRateLimit :one
+SELECT rate_limit_per_minute FROM "streaming"."user"
+WHERE "user_name" = $1
+`
+
+func (q *Queries) GetUserRateLimit(ctx context.Context, userName string) (int32, error) {
+	row := q.db.QueryRowContext(ctx, getUserRateLimit, userName)
+	var rate_limit_per_minute int32
+	err := row.Scan(&rate_limit_per_minute)
+	return rate_limit_per_minute, err
 }
 
 const upsertCollection = `-- name: UpsertCollection :exec

@@ -74,3 +74,18 @@ func (repo *UserRepository) GetUserByUserName(ctx context.Context, userName stri
 
 	return &u, nil
 }
+
+func (repo *UserRepository) GetUserRateLimit(ctx context.Context, userName string) (int32, error) {
+	var limit int32
+	err := repo.db.Read(ctx, func(tx *sql.Tx) (err error) {
+		q := model.New(tx)
+		limit, err = q.GetUserRateLimit(ctx, userName)
+		return
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	return limit, nil
+}

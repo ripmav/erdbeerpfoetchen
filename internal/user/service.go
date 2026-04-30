@@ -13,6 +13,7 @@ type Repository interface {
 	GetUserApiToken(ctx context.Context, userName string) (uuid.UUID, error)
 	GetUserById(ctx context.Context, userId uuid.UUID) (*model.StreamingUser, error)
 	GetUserByUserName(ctx context.Context, userName string) (*model.StreamingUser, error)
+	GetUserRateLimit(ctx context.Context, userName string) (int32, error)
 }
 
 type Service struct {
@@ -45,4 +46,12 @@ func (s *Service) GetUserApiToken(ctx context.Context, userName string) (uuid.UU
 		return uuid.Nil, fmt.Errorf("cannot get user api token: %w", err)
 	}
 	return apiToken, nil
+}
+
+func (s *Service) GetUserRateLimit(ctx context.Context, userName string) (int32, error) {
+	limit, err := s.userRepo.GetUserRateLimit(ctx, userName)
+	if err != nil {
+		return 0, fmt.Errorf("cannot get user rate limit: %w", err)
+	}
+	return limit, nil
 }

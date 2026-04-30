@@ -1,18 +1,24 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 )
 
-// RateLimiter implements a per-IP token bucket rate limiter.
+const defaultRatePerMinute = 100
+
+// RateLimitProvider returns the configured rate limit (requests per minute) for a streamer.
+type RateLimitProvider interface {
+	GetUserRateLimit(ctx context.Context, userName string) (int32, error)
+}
+
+// RateLimiter implements a per-streamer token bucket rate limiter.
 type RateLimiter struct {
-	mu      sync.Mutex
-	clients map[string]*bucket
-	rate    float64 // tokens replenished per second
-	burst   float64 // maximum token capacity
+	mu       sync.Mutex
+	clients  map[string]*bucket
+	provider RateLimitProvider
 }
 
 type bucket struct {
@@ -20,13 +26,12 @@ type bucket struct {
 	lastSeen time.Time
 }
 
-// NewRateLimiter creates a RateLimiter allowing rate requests/second with a
-// maximum burst of burst requests. Stale client state is cleaned up every minute.
-func NewRateLimiter(rate float64, burst int) *RateLimiter {
+// NewRateLimiter creates a RateLimiter that fetches per-streamer rate limits from provider.
+// If provider is nil or the lookup fails, the default of 100 requests/minute is used.
+func NewRateLimiter(provider RateLimitProvider) *RateLimiter {
 	rl := &RateLimiter{
-		clients: make(map[string]*bucket),
-		rate:    rate,
-		burst:   float64(burst),
+		clients:  make(map[string]*bucket),
+		provider: provider,
 	}
 	go rl.cleanup()
 	return rl
@@ -37,30 +42,30 @@ func (rl *RateLimiter) cleanup() {
 	defer ticker.Stop()
 	for range ticker.C {
 		rl.mu.Lock()
-		for ip, b := range rl.clients {
+		for key, b := range rl.clients {
 			if time.Since(b.lastSeen) > 3*time.Minute {
-				delete(rl.clients, ip)
+				delete(rl.clients, key)
 			}
 		}
 		rl.mu.Unlock()
 	}
 }
 
-func (rl *RateLimiter) allow(ip string) bool {
+func (rl *RateLimiter) allow(key string, rate, burst float64) bool {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
 	now := time.Now()
-	b, ok := rl.clients[ip]
+	b, ok := rl.clients[key]
 	if !ok {
-		b = &bucket{tokens: rl.burst, lastSeen: now}
-		rl.clients[ip] = b
+		b = &bucket{tokens: burst, lastSeen: now}
+		rl.clients[key] = b
 	}
 
 	elapsed := now.Sub(b.lastSeen).Seconds()
-	b.tokens += elapsed * rl.rate
-	if b.tokens > rl.burst {
-		b.tokens = rl.burst
+	b.tokens += elapsed * rate
+	if b.tokens > burst {
+		b.tokens = burst
 	}
 	b.lastSeen = now
 
@@ -71,14 +76,23 @@ func (rl *RateLimiter) allow(ip string) bool {
 	return false
 }
 
-// Limit wraps next with per-IP rate limiting, returning 429 when the limit is exceeded.
+// Limit wraps next with per-streamer rate limiting, returning 429 when the limit is exceeded.
+// The rate limit is read from the database per streamer; defaults to 100 requests/minute on error.
 func (rl *RateLimiter) Limit(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ip := r.RemoteAddr
-		if i := strings.LastIndex(ip, ":"); i != -1 {
-			ip = ip[:i]
+		streamerName := r.PathValue("streamer_name")
+
+		ratePerMin := int32(defaultRatePerMinute)
+		if rl.provider != nil && streamerName != "" {
+			if limit, err := rl.provider.GetUserRateLimit(r.Context(), streamerName); err == nil {
+				ratePerMin = limit
+			}
 		}
-		if !rl.allow(ip) {
+
+		rate := float64(ratePerMin) / 60.0
+		burst := float64(ratePerMin)
+
+		if !rl.allow(streamerName, rate, burst) {
 			http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
 			return
 		}

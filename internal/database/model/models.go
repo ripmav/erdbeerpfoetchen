@@ -19,7 +19,8 @@ type StreamingCollection struct {
 }
 
 type StreamingUser struct {
-	ID       uuid.UUID
-	UserName string
-	ApiToken uuid.UUID
+	ID                 uuid.UUID
+	UserName           string
+	ApiToken           uuid.UUID
+	RateLimitPerMinute int32
 }

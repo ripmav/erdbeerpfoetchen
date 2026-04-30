@@ -25,3 +25,7 @@ WHERE "user_name" = sqlc.arg(user_name);
 -- name: GetUserApiToken :one
 SELECT api_token FROM "streaming"."user"
 WHERE "user_name" = sqlc.arg(user_name);
+
+-- name: GetUserRateLimit :one
+SELECT rate_limit_per_minute FROM "streaming"."user"
+WHERE "user_name" = sqlc.arg(user_name);

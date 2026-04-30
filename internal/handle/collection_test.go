@@ -27,14 +27,14 @@ const validAuthHeader = "Bearer 11111111-1111-1111-1111-111111111111"
 
 func installMux(svc handle.CollectionService, usr handle.UserService) *http.ServeMux {
 	mux := http.NewServeMux()
-	rl := middleware.NewRateLimiter(1000, 10000)
+	rl := middleware.NewRateLimiter(nil)
 	handle.NewCollectionHandler(svc, usr, rl).Install(mux)
 	return mux
 }
 
 func TestNewCollectionHandler(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	rl := middleware.NewRateLimiter(10, 20)
+	rl := middleware.NewRateLimiter(nil)
 	h := handle.NewCollectionHandler(mock.NewMockCollectionService(ctrl), mock.NewMockUserService(ctrl), rl)
 	require.NotNil(t, h, "NewCollectionHandler returned nil")
 }
