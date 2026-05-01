@@ -38,7 +38,7 @@ func (cmd *ApiCommand) Run(ctx context.Context, cfg *Config) error {
 	collectionService := collection.New(collectionRepo)
 	userService := user.New(userRepo)
 
-	rateLimiter := middleware.NewRateLimiter(10, 20)
+	rateLimiter := middleware.NewRateLimiter(userService)
 
 	collectionHandler := handle.NewCollectionHandler(collectionService, userService, rateLimiter)
 	collectionHandler.Install(mux)

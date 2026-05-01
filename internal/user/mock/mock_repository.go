@@ -86,3 +86,18 @@ func (mr *MockRepositoryMockRecorder) GetUserByUserName(ctx, userName any) *gomo
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByUserName", reflect.TypeOf((*MockRepository)(nil).GetUserByUserName), ctx, userName)
 }
+
+// GetUserRateLimit mocks base method.
+func (m *MockRepository) GetUserRateLimit(ctx context.Context, userName string) (int32, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserRateLimit", ctx, userName)
+	ret0, _ := ret[0].(int32)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserRateLimit indicates an expected call of GetUserRateLimit.
+func (mr *MockRepositoryMockRecorder) GetUserRateLimit(ctx, userName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserRateLimit", reflect.TypeOf((*MockRepository)(nil).GetUserRateLimit), ctx, userName)
+}

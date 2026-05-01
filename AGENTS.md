@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) and all other AI Coding Agents when working with code in this repository.
 
 ## Commands
 
@@ -11,8 +11,8 @@ go build ./cmd/api
 # Run
 go run ./cmd/api api --database.uri "postgres://user:pass@host:5432/db?sslmode=disable"
 
-# Tests (none exist yet — see TODO.md)
-go test ./...
+# Tests
+go test -v -race ./...
 
 # Local dev database (Podman-based PostgreSQL container)
 ./script/postgres.sh
