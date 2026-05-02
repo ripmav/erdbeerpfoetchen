@@ -1,0 +1,12 @@
+debug: false
+
+server:
+  listen: ":8080"
+  # unsafe must be true when no TLS certificate is configured
+  unsafe: true
+  tls:
+    cert: ""
+    key: ""
+
+database:
+  uri: postgres://postgres:postgres@db:5432/postgres?sslmode=disable

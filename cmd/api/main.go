@@ -17,8 +17,9 @@ import (
 type application struct {
 	cli.Config `envprefix:"PFOETCHEN_"`
 
-	ConfigFile string         `name:"config" short:"c" help:"Path to YAML config file" type:"existingfile"`
-	Api        cli.ApiCommand `cmd:"" help:"Run the API server"`
+	ConfigFile string             `name:"config" short:"c" help:"Path to YAML config file" type:"existingfile"`
+	Api        cli.ApiCommand     `cmd:"" help:"Run the API server"`
+	Migrate    cli.MigrateCommand `cmd:"" help:"Apply database migrations and exit"`
 }
 
 func main() {
