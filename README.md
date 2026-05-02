@@ -104,10 +104,10 @@ The config file path can also be set via `PFOETCHEN_CONFIG`.
 ## Commands
 
 ```bash
-# Run the API server
+# Run the API server (auto-applies any pending migrations on startup)
 ./api --config config.yaml api
 
-# Apply database migrations and exit
+# Apply database migrations and exit without starting the server
 ./api --config config.yaml migrate
 
 # Build
