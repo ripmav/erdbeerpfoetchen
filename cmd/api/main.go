@@ -5,17 +5,20 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/alecthomas/kong"
 
 	"github.com/ripmav/erdbeerpfoetchen/internal/cli"
+	"github.com/ripmav/erdbeerpfoetchen/internal/config"
 )
 
 type application struct {
 	cli.Config `envprefix:"PFOETCHEN_"`
 
-	Api cli.ApiCommand `cmd:"" help:"Run the API server"`
+	ConfigFile string         `name:"config" short:"c" help:"Path to YAML config file" type:"existingfile"`
+	Api        cli.ApiCommand `cmd:"" help:"Run the API server"`
 }
 
 func main() {
@@ -42,12 +45,20 @@ func run() error {
 		}
 	}()
 
-	var app application
-
 	options := []kong.Option{
 		kong.Name("Pfötchen API"),
 		kong.UsageOnError(),
 	}
+
+	if path := prescanConfigFlag(); path != "" {
+		resolver, err := config.New(path)
+		if err != nil {
+			return fmt.Errorf("load config: %w", err)
+		}
+		options = append(options, kong.Resolvers(resolver))
+	}
+
+	var app application
 
 	k := kong.Parse(&app, options...)
 	k.BindTo(ctx, (*context.Context)(nil))
@@ -57,4 +68,21 @@ func run() error {
 	}
 
 	return nil
+}
+
+// prescanConfigFlag scans os.Args for --config FILE, --config=FILE, or -c FILE
+// before kong.Parse so the YAML resolver can be registered in time.
+func prescanConfigFlag() string {
+	args := os.Args[1:]
+	for i, arg := range args {
+		switch {
+		case arg == "--config" || arg == "-c":
+			if i+1 < len(args) {
+				return args[i+1]
+			}
+		case strings.HasPrefix(arg, "--config="):
+			return strings.TrimPrefix(arg, "--config=")
+		}
+	}
+	return ""
 }
