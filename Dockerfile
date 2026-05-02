@@ -10,8 +10,9 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o /build/api ./cmd/api
 
 
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM scratch
 
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /build/api /api
 
 ENTRYPOINT ["/api"]
