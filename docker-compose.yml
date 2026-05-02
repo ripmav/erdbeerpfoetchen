@@ -1,6 +1,8 @@
 services:
   db:
     image: postgres:18-alpine3.23
+    profiles:
+      - local-db
     environment:
       POSTGRES_PASSWORD: postgres
     healthcheck:
@@ -19,7 +21,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    restart: "no"
+        required: false  # not needed when using an external database
+    restart: on-failure  # retry until the database is reachable
 
   api:
     image: ghcr.io/ripmav/erdbeerpfoetchen:latest
