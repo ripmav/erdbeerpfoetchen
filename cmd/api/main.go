@@ -71,14 +71,18 @@ func run() error {
 	return nil
 }
 
-// prescanConfigFlag returns the config file path from PFOETCHEN_CONFIG env var
-// or --config / -c CLI flag, whichever is found first. It must run before
-// kong.Parse so the YAML resolver can be registered in time.
+// prescanConfigFlag returns the config file path from the PFOETCHEN_CONFIG env
+// var or the --config / -c CLI flag. It must run before kong.Parse so the YAML
+// resolver can be registered in time.
 func prescanConfigFlag() string {
-	if path := os.Getenv("PFOETCHEN_CONFIG"); path != "" {
-		return path
+	return prescan(os.Getenv("PFOETCHEN_CONFIG"), os.Args[1:])
+}
+
+// prescan is the testable core of prescanConfigFlag.
+func prescan(envVal string, args []string) string {
+	if envVal != "" {
+		return envVal
 	}
-	args := os.Args[1:]
 	for i, arg := range args {
 		switch {
 		case arg == "--config" || arg == "-c":
@@ -87,6 +91,8 @@ func prescanConfigFlag() string {
 			}
 		case strings.HasPrefix(arg, "--config="):
 			return strings.TrimPrefix(arg, "--config=")
+		case strings.HasPrefix(arg, "-c="):
+			return strings.TrimPrefix(arg, "-c=")
 		}
 	}
 	return ""

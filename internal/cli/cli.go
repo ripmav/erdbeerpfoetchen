@@ -10,21 +10,21 @@ import (
 )
 
 type Config struct {
-	EnableDebug bool `name:"debug" env:"DEBUG" default:"false" help:"Enable debug mode" yaml:"debug"`
+	EnableDebug bool `name:"debug" env:"DEBUG" default:"false" help:"Enable debug mode"`
 
 	Server struct {
-		Listen       string `name:"listen" env:"LISTEN" default:":8080" help:"Listen address" yaml:"listen"`
-		EnableUnsafe bool   `name:"unsafe" env:"UNSAFE" default:"false" help:"Allow insecure connections" yaml:"unsafe"`
+		Listen       string `name:"listen" env:"LISTEN" default:":8080" help:"Listen address"`
+		EnableUnsafe bool   `name:"unsafe" env:"UNSAFE" default:"false" help:"Allow insecure connections"`
 
 		TLS struct {
-			CertPath string `name:"cert" env:"CERT_PATH" help:"Path to TLS certificate file" yaml:"cert"`
-			KeyPath  string `name:"key" env:"KEY_PATH" help:"Path to TLS key file" yaml:"key"`
-		} `embed:"" prefix:"tls." envprefix:"TLS_" yaml:"tls"`
-	} `embed:"" prefix:"server." envprefix:"SERVER_" yaml:"server"`
+			CertPath string `name:"cert" env:"CERT_PATH" help:"Path to TLS certificate file"`
+			KeyPath  string `name:"key" env:"KEY_PATH" help:"Path to TLS key file"`
+		} `embed:"" prefix:"tls." envprefix:"TLS_"`
+	} `embed:"" prefix:"server." envprefix:"SERVER_"`
 
 	DB struct {
-		URI string `name:"uri" env:"URI" help:"Database URI" yaml:"uri"`
-	} `embed:"" prefix:"database." envprefix:"DATABASE_" yaml:"database"`
+		URI string `name:"uri" env:"URI" help:"Database URI"`
+	} `embed:"" prefix:"database." envprefix:"DATABASE_"`
 }
 
 func (cfg *Config) SetDefaultLogger() {

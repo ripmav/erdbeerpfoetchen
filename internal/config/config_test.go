@@ -109,6 +109,22 @@ server:
 	assert.Equal(t, ":7070", cfg.ServerListen, "env var must override YAML value")
 }
 
+func TestNew_SequenceRejected(t *testing.T) {
+	path := writeYAML(t, `
+server:
+  allowed_origins:
+    - https://example.com
+`)
+	_, err := config.New(path)
+	assert.ErrorContains(t, err, "YAML sequences are not supported")
+}
+
+func TestNew_YAMLListAtRoot(t *testing.T) {
+	path := writeYAML(t, "- foo\n- bar\n")
+	_, err := config.New(path)
+	assert.ErrorContains(t, err, "parse config file")
+}
+
 func TestNew_NullValuesSkipped(t *testing.T) {
 	path := writeYAML(t, `
 server:

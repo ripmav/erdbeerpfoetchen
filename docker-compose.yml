@@ -14,23 +14,24 @@ services:
       - db-data:/var/lib/postgresql/data
 
   migrate:
-    image: ghcr.io/ripmav/erdbeerpfoetchen:latest
+    image: ghcr.io/ripmav/erdbeerpfoetchen:${IMAGE_TAG:-latest}
     command: ["--config", "/config/config.yaml", "migrate"]
     volumes:
-      - ./config.yaml:/config/config.yaml:ro
+      - ./config.yaml:/config/config.yaml:ro  # copy config.yaml.example → config.yaml and edit
     depends_on:
       db:
         condition: service_healthy
         required: false  # not needed when using an external database
     restart: on-failure  # retry until the database is reachable
+    # To re-run migrations after a DB reset: docker compose run migrate
 
   api:
-    image: ghcr.io/ripmav/erdbeerpfoetchen:latest
+    image: ghcr.io/ripmav/erdbeerpfoetchen:${IMAGE_TAG:-latest}
     command: ["--config", "/config/config.yaml", "api"]
     ports:
       - "8080:8080"
     volumes:
-      - ./config.yaml:/config/config.yaml:ro
+      - ./config.yaml:/config/config.yaml:ro  # copy config.yaml.example → config.yaml and edit
     depends_on:
       migrate:
         condition: service_completed_successfully

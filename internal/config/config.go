@@ -27,11 +27,15 @@ func New(path string) (*Resolver, error) {
 	}
 
 	values := make(map[string]string)
-	flatten(raw, "", values)
+	if err := flatten(raw, "", values); err != nil {
+		return nil, fmt.Errorf("parse config file: %w", err)
+	}
 
 	return &Resolver{values: values}, nil
 }
 
+// Validate satisfies kong.Resolver. No structural validation is needed because
+// unknown keys in the YAML file are simply ignored by the resolver.
 func (r *Resolver) Validate(_ *kong.Application) error { return nil }
 
 func (r *Resolver) Resolve(_ *kong.Context, _ *kong.Path, flag *kong.Flag) (interface{}, error) {
@@ -53,7 +57,8 @@ func (r *Resolver) Resolve(_ *kong.Context, _ *kong.Path, flag *kong.Flag) (inte
 
 // flatten recursively walks a YAML map and writes dot-joined keys into out.
 // Example: {server: {listen: ":8080"}} → {"server.listen": ":8080"}
-func flatten(m map[string]interface{}, prefix string, out map[string]string) {
+// YAML sequences are rejected because kong has no list-valued flags.
+func flatten(m map[string]interface{}, prefix string, out map[string]string) error {
 	for k, v := range m {
 		key := k
 		if prefix != "" {
@@ -63,9 +68,14 @@ func flatten(m map[string]interface{}, prefix string, out map[string]string) {
 		case nil:
 			// skip explicit nulls — let the flag keep its default
 		case map[string]interface{}:
-			flatten(val, key, out)
+			if err := flatten(val, key, out); err != nil {
+				return err
+			}
+		case []interface{}:
+			return fmt.Errorf("key %q: YAML sequences are not supported", key)
 		default:
 			out[key] = fmt.Sprintf("%v", val)
 		}
 	}
+	return nil
 }
