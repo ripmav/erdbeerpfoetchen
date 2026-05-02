@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/alecthomas/kong"
@@ -71,29 +71,19 @@ func run() error {
 	return nil
 }
 
-// prescanConfigFlag returns the config file path from the PFOETCHEN_CONFIG env
-// var or the --config / -c CLI flag. It must run before kong.Parse so the YAML
-// resolver can be registered in time.
+// prescanConfigFlag discovers the config file path before the full kong.Parse
+// so the YAML resolver can be registered in time. It parses os.Args using the
+// full application struct (so no flags are unknown), suppressing all output and
+// exit calls since errors are irrelevant at this stage.
 func prescanConfigFlag() string {
-	return prescan(os.Getenv("PFOETCHEN_CONFIG"), os.Args[1:])
-}
-
-// prescan is the testable core of prescanConfigFlag.
-func prescan(envVal string, args []string) string {
-	if envVal != "" {
-		return envVal
+	var app application
+	p, err := kong.New(&app,
+		kong.Exit(func(int) {}),
+		kong.Writers(io.Discard, io.Discard),
+	)
+	if err != nil {
+		return ""
 	}
-	for i, arg := range args {
-		switch {
-		case arg == "--config" || arg == "-c":
-			if i+1 < len(args) {
-				return args[i+1]
-			}
-		case strings.HasPrefix(arg, "--config="):
-			return strings.TrimPrefix(arg, "--config=")
-		case strings.HasPrefix(arg, "-c="):
-			return strings.TrimPrefix(arg, "-c=")
-		}
-	}
-	return ""
+	_, _ = p.Parse(os.Args[1:])
+	return app.ConfigFile
 }
