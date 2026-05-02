@@ -1,146 +1,158 @@
 # Pfötchen API
 
-`erdbeerpfoetchen` (Pfötchen API) is a Go-based REST API service designed for managing collections. It provides a simple interface to store and retrieve JSON data with authentication and database persistence.
+`erdbeerpfoetchen` (Pfötchen API) is a Go REST API for storing and retrieving per-viewer JSON collections, keyed by streamer and collection type, backed by PostgreSQL.
 
 ## Features
 
-- **RESTful API**: Endpoints for reading and writing collections.
-- **CLI-driven Configuration**: Flexible configuration via command-line arguments and environment variables using `kong`.
-- **Database Persistence**: PostgreSQL integration using `sqlc` for type-safe queries.
-- **Graceful Shutdown**: Handles OS signals (`SIGINT`, `SIGTERM`) for clean termination.
-- **Authentication**: Bearer token middleware.
+- **RESTful API** — endpoints for reading and writing JSON collections
+- **Bearer token auth** — middleware-enforced on every request
+- **YAML configuration** — all settings loadable from a config file; CLI flags and env vars override file values
+- **Auto-migration** — migrations are embedded in the binary and applied on startup; no external tooling required
+- **Docker Compose** — one-command local setup with optional bundled PostgreSQL
+- **Graceful shutdown** — handles `SIGINT` / `SIGTERM`
+
+## Quick start (Docker Compose)
+
+```bash
+cp .env.example .env             # enable bundled postgres (COMPOSE_PROFILES=local-db)
+cp config.yaml.example config.yaml
+docker compose up
+```
+
+The `db` service starts first, the `migrate` service applies all pending migrations, then `api` starts on port `8080`.
+
+To use an **external** PostgreSQL instance, edit `database.uri` in `config.yaml`, leave `COMPOSE_PROFILES` empty in `.env`, and run `docker compose up`.
 
 ## Requirements
 
-- **Go**: 1.26.1 or higher
-- **PostgreSQL**: Used for data storage.
-- **SQLC**: For generating database code from SQL queries.
-- **Goose**: For running database migrations.
-- **Podman/Docker**: (Optional) For running the local development database script.
+- **Go** 1.26.2+
+- **PostgreSQL** (bundled via Docker Compose, or external)
+- **sqlc** — only needed when modifying `schema/queries.sql`
 
-## Project Structure
+## Project structure
 
-```text
-.
-├── cmd/
-│   └── api/                # Application entry point (main.go)
-├── docs/                   # API documentation (OpenAPI spec)
-├── internal/
-│   ├── cli/                # CLI and configuration logic (using Kong)
-│   ├── collection/         # Domain models and services
-│   ├── database/           # Database connection and repository implementations
-│   │   └── model/          # Generated sqlc models
-│   ├── handle/             # HTTP request handlers
-│   ├── middleware/         # HTTP middlewares (Auth)
-│   └── user/               # User domain models and services
-├── schema/                 # Database schema and migrations
-│   ├── migrations/         # Goose migrations
-│   └── queries.sql         # SQLC queries
-├── script/
-│   └── postgres.sh         # Script to run local PostgreSQL via Podman
-├── .env                    # Environment variables file (ignored by VCS)
-├── go.mod                  # Go module definition
-├── sqlc.yaml               # SQLC configuration
-└── README.md
 ```
-
-## Setup & Installation
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/ripmav/erdbeerpfoetchen.git
-   cd erdbeerpfoetchen
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   go mod download
-   ```
-
-3. **Database Setup**:
-   
-   You can start a local PostgreSQL instance using the provided script (requires Podman):
-   ```bash
-   ./script/postgres.sh
-   ```
-   
-   Then run migrations using `goose`:
-   ```bash
-   goose -dir schema/migrations postgres "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" up
-   ```
+.
+├── cmd/api/                    # entry point
+├── docs/                       # OpenAPI spec
+├── internal/
+│   ├── cli/                    # Config struct, ApiCommand, MigrateCommand
+│   ├── config/                 # YAML file resolver for kong
+│   ├── collection/             # domain service + repository interface
+│   ├── database/               # PostgreSQL repositories, migrations
+│   │   └── model/              # sqlc-generated types
+│   ├── handle/                 # HTTP handlers
+│   ├── middleware/             # auth, rate-limit
+│   └── user/                   # user domain service + repository interface
+├── schema/
+│   ├── migrations/             # Goose SQL migration files (embedded in binary)
+│   └── queries.sql             # sqlc query definitions
+├── script/postgres.sh          # spin up a local Podman PostgreSQL container
+├── config.yaml.example         # annotated config template
+├── docker-compose.yml
+├── .env.example
+└── go.mod
+```
 
 ## Configuration
 
-The application is configured using command-line flags or environment variables (prefixed with `PFOETCHEN_`).
+Settings are resolved in this order (highest priority first):
 
-| Flag                | Environment Variable             | Default | Description                       |
-|---------------------|----------------------------------|---------|-----------------------------------|
-| `--debug`           | `PFOETCHEN_DEBUG`                | `false` | Enable debug mode and logging     |
-| `--server.listen`   | `PFOETCHEN_SERVER_LISTEN`        | `:8080` | Server listen address             |
-| `--server.unsafe`   | `PFOETCHEN_SERVER_UNSAFE`        | `false` | Allow insecure connections (HTTP) |
-| `--server.tls.cert` | `PFOETCHEN_SERVER_TLS_CERT_PATH` | -       | Path to TLS certificate file      |
-| `--server.tls.key`  | `PFOETCHEN_SERVER_TLS_KEY_PATH`  | -       | Path to TLS key file              |
-| `--database.uri`    | `PFOETCHEN_DATABASE_URI`         | -       | PostgreSQL connection URI         |
+1. CLI flags
+2. Environment variables (`PFOETCHEN_*`)
+3. YAML config file (`--config` / `-c`)
+4. Built-in defaults
 
-## Running the API
-
-To start the API server:
+### YAML config file
 
 ```bash
-go run ./cmd/api api --database.uri "postgres://postgres:postgres@localhost:5432/postgres"
+cp config.yaml.example config.yaml
+# edit config.yaml, then:
+./api --config config.yaml api
 ```
 
-Or using environment variables:
+`config.yaml.example`:
+
+```yaml
+debug: false
+
+server:
+  listen: ":8080"
+  unsafe: true   # required when no TLS certificate is configured
+  tls:
+    cert: ""
+    key: ""
+
+database:
+  uri: postgres://postgres:postgres@db:5432/postgres?sslmode=disable
+```
+
+The config file path can also be set via `PFOETCHEN_CONFIG`.
+
+### All flags and env vars
+
+| Flag | Environment variable | Default | Description |
+|---|---|---|---|
+| `--debug` | `PFOETCHEN_DEBUG` | `false` | Verbose logging |
+| `--server.listen` | `PFOETCHEN_SERVER_LISTEN` | `:8080` | Listen address |
+| `--server.unsafe` | `PFOETCHEN_SERVER_UNSAFE` | `false` | Allow HTTP (no TLS) |
+| `--server.tls.cert` | `PFOETCHEN_SERVER_TLS_CERT_PATH` | — | TLS certificate path |
+| `--server.tls.key` | `PFOETCHEN_SERVER_TLS_KEY_PATH` | — | TLS key path |
+| `--database.uri` | `PFOETCHEN_DATABASE_URI` | — | PostgreSQL connection URI |
+| `--config` / `-c` | `PFOETCHEN_CONFIG` | — | Path to YAML config file |
+
+## Commands
 
 ```bash
-export PFOETCHEN_DATABASE_URI="postgres://postgres:postgres@localhost:5432/postgres"
-go run ./cmd/api api
+# Run the API server (auto-applies any pending migrations on startup)
+./api --config config.yaml api
+
+# Apply database migrations and exit without starting the server
+./api --config config.yaml migrate
+
+# Build
+go build ./cmd/api
+
+# Run tests
+go test -race ./...
+
+# Regenerate database code after schema/query changes
+sqlc generate
+
+# Start a local PostgreSQL container (Podman)
+./script/postgres.sh
 ```
 
-## API Endpoints
+## API
 
-The full API specification is available in the [OpenAPI spec](docs/openapi.yaml).
-
-All endpoints require an `Authorization: Bearer <token>` header.
+Full spec in [`docs/openapi.yaml`](docs/openapi.yaml). All endpoints require `Authorization: Bearer <token>`.
 
 > [!NOTE]
-> Current valid token is hardcoded to `my-super-secret-key` (See [TODO](TODO.md)).
+> The bearer token is currently hardcoded to `my-super-secret-key` — see [TODO.md](TODO.md).
 
-### 1. Store a Collection
-- **URL**: `POST /api/v1/collection/{streamer_name}`
-- **Headers**:
-  - `X-COLLECTION-KEY`: Unique collection identifier (required)
-  - `X-USER-KEY`: Unique viewer identifier (required)
-- **Body**: JSON object
-- **Response**: `202 Accepted` on success.
-
-### 2. Retrieve a Collection
-- **URL**: `GET /api/v1/collection/{streamer_name}`
-- **Headers**:
-  - `X-COLLECTION-KEY`: Unique collection identifier (required)
-  - `X-USER-KEY`: Unique viewer identifier (required)
-- **Response**: `200 OK` with JSON body.
+| Method | Path | Request headers | Success |
+|---|---|---|---|
+| `POST` | `/api/v1/collection/{streamer_name}` | `X-COLLECTION-KEY`, `X-USER-KEY`, JSON body | `202` |
+| `GET` | `/api/v1/collection/{streamer_name}` | `X-COLLECTION-KEY`, `X-USER-KEY` | `200` + JSON |
 
 ## Development
 
-### Code Generation
-This project uses `sqlc` to generate database code. If you modify `schema/queries.sql` or the schema in `schema/migrations`, regenerate the code:
+### Local database (without Docker Compose)
+
+```bash
+./script/postgres.sh   # starts postgres via Podman on :5432
+./api --config config.yaml migrate
+./api --config config.yaml api
+```
+
+### Code generation
+
+After modifying `schema/queries.sql` or adding a migration:
 
 ```bash
 sqlc generate
 ```
 
-### Running Tests
-To run available tests:
-
-```bash
-go test ./...
-```
-
-## Scripts
-
-- `script/postgres.sh`: Starts a Percona PostgreSQL container using Podman for local development.
-
 ## License
 
-This project is licensed under [The Unlicense](LICENSE) - see the LICENSE file for details.
+[The Unlicense](LICENSE)

@@ -19,7 +19,7 @@ type Config struct {
 		TLS struct {
 			CertPath string `name:"cert" env:"CERT_PATH" help:"Path to TLS certificate file"`
 			KeyPath  string `name:"key" env:"KEY_PATH" help:"Path to TLS key file"`
-		} `embed:"" prefix:"tls" envprefix:"TLS_"`
+		} `embed:"" prefix:"tls." envprefix:"TLS_"`
 	} `embed:"" prefix:"server." envprefix:"SERVER_"`
 
 	DB struct {

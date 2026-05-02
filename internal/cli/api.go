@@ -21,7 +21,7 @@ type ApiCommand struct {
 func (cmd *ApiCommand) Run(ctx context.Context, cfg *Config) error {
 	mux := http.NewServeMux()
 
-	db, err := database.Connect(ctx, cfg.DB.URI, cfg.EnableDebug)
+	db, err := database.ConnectAndMigrate(ctx, cfg.DB.URI, cfg.EnableDebug)
 
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
