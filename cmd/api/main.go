@@ -17,7 +17,7 @@ import (
 type application struct {
 	cli.Config `envprefix:"PFOETCHEN_"`
 
-	ConfigFile string             `name:"config" short:"c" help:"Path to YAML config file" type:"existingfile"`
+	ConfigFile string             `name:"config" short:"c" env:"PFOETCHEN_CONFIG" help:"Path to YAML config file" type:"existingfile"`
 	Api        cli.ApiCommand     `cmd:"" help:"Run the API server"`
 	Migrate    cli.MigrateCommand `cmd:"" help:"Apply database migrations and exit"`
 }
@@ -71,9 +71,13 @@ func run() error {
 	return nil
 }
 
-// prescanConfigFlag scans os.Args for --config FILE, --config=FILE, or -c FILE
-// before kong.Parse so the YAML resolver can be registered in time.
+// prescanConfigFlag returns the config file path from PFOETCHEN_CONFIG env var
+// or --config / -c CLI flag, whichever is found first. It must run before
+// kong.Parse so the YAML resolver can be registered in time.
 func prescanConfigFlag() string {
+	if path := os.Getenv("PFOETCHEN_CONFIG"); path != "" {
+		return path
+	}
 	args := os.Args[1:]
 	for i, arg := range args {
 		switch {

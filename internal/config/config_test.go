@@ -87,6 +87,28 @@ func TestNew_InvalidYAML(t *testing.T) {
 	assert.ErrorContains(t, err, "parse config file")
 }
 
+func TestNew_EnvVarOverridesYAML(t *testing.T) {
+	path := writeYAML(t, `
+server:
+  listen: ":9090"
+`)
+
+	resolver, err := config.New(path)
+	require.NoError(t, err)
+
+	t.Setenv("SERVER_LISTEN", ":7070")
+
+	var cfg struct {
+		ServerListen string `name:"server.listen" env:"SERVER_LISTEN" default:":8080"`
+	}
+
+	k := kong.Must(&cfg, kong.Resolvers(resolver))
+	_, err = k.Parse(nil)
+	require.NoError(t, err)
+
+	assert.Equal(t, ":7070", cfg.ServerListen, "env var must override YAML value")
+}
+
 func TestNew_NullValuesSkipped(t *testing.T) {
 	path := writeYAML(t, `
 server:

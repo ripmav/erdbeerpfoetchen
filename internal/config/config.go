@@ -35,6 +35,15 @@ func New(path string) (*Resolver, error) {
 func (r *Resolver) Validate(_ *kong.Application) error { return nil }
 
 func (r *Resolver) Resolve(_ *kong.Context, _ *kong.Path, flag *kong.Flag) (interface{}, error) {
+	// Env vars take precedence over the YAML file. Kong only checks env vars
+	// when the resolver returns nil, so we yield here if any env var for this
+	// flag is already set.
+	for _, env := range flag.Tag.Envs {
+		if _, ok := os.LookupEnv(env); ok {
+			return nil, nil
+		}
+	}
+
 	v, ok := r.values[flag.Name]
 	if !ok {
 		return nil, nil
