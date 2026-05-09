@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - "feat/**"
+      # docs/** and ci/** branches intentionally omitted — no CI needed
   pull_request:
     branches:
       - main
@@ -14,6 +15,12 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    # Skip PRs from docs/ or ci/ branches, and commits with those prefixes on main
+    if: |
+      !startsWith(github.head_ref, 'docs/') &&
+      !startsWith(github.head_ref, 'ci/') &&
+      !startsWith(github.event.head_commit.message, 'docs:') &&
+      !startsWith(github.event.head_commit.message, 'ci:')
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -30,6 +37,11 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    if: |
+      !startsWith(github.head_ref, 'docs/') &&
+      !startsWith(github.head_ref, 'ci/') &&
+      !startsWith(github.event.head_commit.message, 'docs:') &&
+      !startsWith(github.event.head_commit.message, 'ci:')
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -44,6 +56,11 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    if: |
+      !startsWith(github.head_ref, 'docs/') &&
+      !startsWith(github.head_ref, 'ci/') &&
+      !startsWith(github.event.head_commit.message, 'docs:') &&
+      !startsWith(github.event.head_commit.message, 'ci:')
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
