@@ -18,6 +18,8 @@ services:
     command: ["--config", "/config/config.yaml", "migrate"]
     volumes:
       - ./config.yaml:/config/config.yaml:ro  # copy config.yaml.example → config.yaml and edit
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # lets config.yaml use host.docker.internal for external DBs on Linux
     depends_on:
       db:
         condition: service_healthy
@@ -32,6 +34,8 @@ services:
       - "8080:8080"
     volumes:
       - ./config.yaml:/config/config.yaml:ro  # copy config.yaml.example → config.yaml and edit
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # lets config.yaml use host.docker.internal for external DBs on Linux
     depends_on:
       migrate:
         condition: service_completed_successfully
