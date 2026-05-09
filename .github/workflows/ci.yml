@@ -12,6 +12,9 @@ jobs:
   govulncheck:
     name: Govulncheck
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -22,8 +25,46 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
+
       - name: Run govulncheck
-        uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee # v1.0.4
+        id: govulncheck
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          govulncheck ./... 2>&1 | tee govulncheck_output.txt
+
+      - name: Annotate action with findings
+        if: steps.govulncheck.outcome == 'failure'
+        run: |
+          echo "::error title=govulncheck::Vulnerability found — see workflow summary for details"
+          {
+            echo "## govulncheck findings"
+            echo '```'
+            cat govulncheck_output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post PR comment on findings
+        if: steps.govulncheck.outcome == 'failure' && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo '## :warning: govulncheck findings'
+            echo ''
+            echo '```'
+            cat govulncheck_output.txt
+            echo '```'
+            echo ''
+            echo "See the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."
+          } > pr_comment.txt
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file pr_comment.txt
+
+      - name: Fail on findings
+        if: steps.govulncheck.outcome == 'failure'
+        run: exit 1
 
   lint:
     name: Lint
