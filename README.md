@@ -95,7 +95,10 @@ server:
     key: ""
 
 database:
-  uri: postgres://postgres:postgres@host.docker.internal:5432/postgres?sslmode=disable
+  # Key=value DSN — recommended; passwords with special characters need no encoding
+  uri: "host=host.docker.internal port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"
+  # URI format alternative (special characters in password must be percent-encoded, e.g. ^ → %5E)
+  # uri: postgres://postgres:postgres@host.docker.internal:5432/postgres?sslmode=disable
 ```
 
 The config file path can also be set via `PFOETCHEN_CONFIG`.
