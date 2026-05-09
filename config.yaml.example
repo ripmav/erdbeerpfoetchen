@@ -9,4 +9,7 @@ server:
     key: ""
 
 database:
-  uri: postgres://postgres:postgres@host.docker.internal:5432/postgres?sslmode=disable
+  # Key=value DSN format — recommended when the password contains special characters (no URL-encoding needed)
+  uri: "host=host.docker.internal port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"
+  # URI format (percent-encode special characters in the password, e.g. ^ → %5E)
+  # uri: postgres://postgres:postgres@host.docker.internal:5432/postgres?sslmode=disable
