@@ -6,22 +6,32 @@
 
 - **RESTful API** — endpoints for reading and writing JSON collections
 - **Bearer token auth** — middleware-enforced on every request
+- **Per-streamer rate limiting** — token bucket per streamer, limit stored in the database (default 100 req/min)
 - **YAML configuration** — all settings loadable from a config file; CLI flags and env vars override file values
 - **Auto-migration** — migrations are embedded in the binary and applied on startup; no external tooling required
-- **Docker Compose** — one-command local setup with optional bundled PostgreSQL
+- **Docker Compose** — one-command local setup; dedicated compose file for external PostgreSQL
 - **Graceful shutdown** — handles `SIGINT` / `SIGTERM`
 
 ## Quick start (Docker Compose)
 
+**Bundled PostgreSQL** (everything in one command):
+
 ```bash
 cp .env.example .env             # enable bundled postgres (COMPOSE_PROFILES=local-db)
 cp config.yaml.example config.yaml
-docker compose up
+# set database.uri to postgres://postgres:postgres@db:5432/postgres?sslmode=disable
+docker compose --profile local-db up
 ```
 
-The `db` service starts first, the `migrate` service applies all pending migrations, then `api` starts on port `8080`.
+**External PostgreSQL** (your own Postgres instance):
 
-To use an **external** PostgreSQL instance, edit `database.uri` in `config.yaml`, leave `COMPOSE_PROFILES` empty in `.env`, and run `docker compose up`.
+```bash
+cp config.yaml.example config.yaml
+# edit database.uri — use host.docker.internal to reach a host-side Postgres on Linux/Mac
+docker compose -f docker-compose.external-db.yml up
+```
+
+In both cases the `migrate` service applies all pending migrations before `api` starts on port `8080`.
 
 ## Requirements
 
@@ -48,8 +58,9 @@ To use an **external** PostgreSQL instance, edit `database.uri` in `config.yaml`
 │   ├── migrations/             # Goose SQL migration files (embedded in binary)
 │   └── queries.sql             # sqlc query definitions
 ├── script/postgres.sh          # spin up a local Podman PostgreSQL container
-├── config.yaml.example         # annotated config template
-├── docker-compose.yml
+├── config.yaml.example              # annotated config template
+├── docker-compose.yml               # bundled PostgreSQL (--profile local-db) or external DB
+├── docker-compose.external-db.yml   # standalone file for external PostgreSQL only
 ├── .env.example
 └── go.mod
 ```
@@ -84,7 +95,7 @@ server:
     key: ""
 
 database:
-  uri: postgres://postgres:postgres@db:5432/postgres?sslmode=disable
+  uri: postgres://postgres:postgres@host.docker.internal:5432/postgres?sslmode=disable
 ```
 
 The config file path can also be set via `PFOETCHEN_CONFIG`.
