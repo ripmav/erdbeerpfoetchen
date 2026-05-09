@@ -69,6 +69,9 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     # Skip PRs from docs/ or ci/ branches, and commits with those prefixes on main
     if: |
       !startsWith(github.head_ref, 'docs/') &&
@@ -85,10 +88,46 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Install golangci-lint
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.12.2
+
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9.2.0
-        with:
-          version: latest
+        id: lint
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          golangci-lint run ./... 2>&1 | tee lint_output.txt
+
+      - name: Annotate action with findings
+        if: steps.lint.outcome == 'failure'
+        run: |
+          echo "::error title=golangci-lint::Lint findings — see workflow summary for details"
+          {
+            echo "## golangci-lint findings"
+            echo '```'
+            cat lint_output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post PR comment on findings
+        if: steps.lint.outcome == 'failure' && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo '## :warning: golangci-lint findings'
+            echo ''
+            echo '```'
+            cat lint_output.txt
+            echo '```'
+            echo ''
+            echo "See the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."
+          } > lint_comment.txt
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file lint_comment.txt
+
+      - name: Fail on findings
+        if: steps.lint.outcome == 'failure'
+        run: exit 1
 
   test:
     name: Test
