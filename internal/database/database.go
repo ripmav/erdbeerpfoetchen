@@ -73,7 +73,7 @@ func (db *DB) Migrate(ctx context.Context) error {
 	if err := goose.SetDialect("postgres"); err != nil {
 		return fmt.Errorf("goose set dialect: %w", err)
 	}
-	if err := goose.UpContext(ctx, db.conn, "migrations"); err != nil {
+	if err := goose.UpContext(ctx, db.conn, "migrations", goose.WithAllowMissing()); err != nil {
 		return fmt.Errorf("goose up: %w", err)
 	}
 	return nil

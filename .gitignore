@@ -1,5 +1,7 @@
 .claude/
 .idea/
+bin/
 
 .env
+.envrc
 config.yaml
