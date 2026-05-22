@@ -34,26 +34,32 @@ type AuthHandler struct {
 	oauth    *oauth2.Config
 	users    AuthUserService
 	adminIDs map[string]struct{}
+	usersURL string
 }
 
-func NewAuthHandler(clientID, clientSecret, redirectURL string, adminIDs []string, users AuthUserService) *AuthHandler {
+func newAuthHandler(cfg *oauth2.Config, adminIDs []string, users AuthUserService) *AuthHandler {
 	adminMap := make(map[string]struct{}, len(adminIDs))
 	for _, id := range adminIDs {
 		adminMap[id] = struct{}{}
 	}
 	return &AuthHandler{
-		oauth: &oauth2.Config{
-			ClientID:     clientID,
-			ClientSecret: clientSecret,
-			RedirectURL:  redirectURL,
-			Endpoint: oauth2.Endpoint{
-				AuthURL:  twitchAuthURL,
-				TokenURL: twitchTokenURL,
-			},
-		},
+		oauth:    cfg,
 		users:    users,
 		adminIDs: adminMap,
+		usersURL: twitchUsersURL,
 	}
+}
+
+func NewAuthHandler(clientID, clientSecret, redirectURL string, adminIDs []string, users AuthUserService) *AuthHandler {
+	return newAuthHandler(&oauth2.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		RedirectURL:  redirectURL,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  twitchAuthURL,
+			TokenURL: twitchTokenURL,
+		},
+	}, adminIDs, users)
 }
 
 func (h *AuthHandler) Install(mux *http.ServeMux) {
@@ -168,7 +174,7 @@ type twitchUsersResponse struct {
 }
 
 func (h *AuthHandler) fetchTwitchUser(ctx context.Context, accessToken string) (id, login string, _ error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, twitchUsersURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, h.usersURL, nil)
 	if err != nil {
 		return "", "", err
 	}
