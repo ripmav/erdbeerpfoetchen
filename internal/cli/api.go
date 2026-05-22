@@ -54,6 +54,7 @@ func (cmd *ApiCommand) Run(ctx context.Context, cfg *Config) error {
 		cfg.Twitch.RedirectURL,
 		adminIDs,
 		userService,
+		!cfg.Server.EnableUnsafe,
 	)
 	authHandler.Install(mux)
 

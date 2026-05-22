@@ -137,6 +137,31 @@ func TestAuthHandler_Login_SetsStateCookie(t *testing.T) {
 			found = true
 			assert.NotEmpty(t, c.Value)
 			assert.True(t, c.HttpOnly)
+			assert.False(t, c.Secure, "test handler uses HTTP; Secure must be false")
+		}
+	}
+	assert.True(t, found, "expected state cookie")
+}
+
+func TestAuthHandler_Login_SetsSecureCookieWhenSecure(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	h := newAuthHandler(&oauth2.Config{
+		ClientID: "test-client", ClientSecret: "test-secret",
+		RedirectURL: "http://localhost/auth/twitch/callback",
+		Endpoint:    oauth2.Endpoint{AuthURL: "https://unused.invalid", TokenURL: "https://unused.invalid"},
+	}, nil, mock.NewMockAuthUserService(ctrl))
+	h.secure = true
+	mux := http.NewServeMux()
+	h.Install(mux)
+
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/auth/twitch", nil))
+
+	var found bool
+	for _, c := range rr.Result().Cookies() {
+		if c.Name == stateCookieName {
+			found = true
+			assert.True(t, c.Secure)
 		}
 	}
 	assert.True(t, found, "expected state cookie")
