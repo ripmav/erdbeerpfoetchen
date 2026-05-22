@@ -13,3 +13,12 @@ database:
   uri: "host=host.docker.internal port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"
   # URI format (percent-encode special characters in the password, e.g. ^ → %5E)
   # uri: postgres://postgres:postgres@host.docker.internal:5432/postgres?sslmode=disable
+
+twitch:
+  client-id: ""
+  client-secret: ""
+  redirect-url: "https://example.com/auth/twitch/callback"
+  # admin-ids is config-file only — not settable via CLI flag or environment variable.
+  # List the Twitch user IDs (numeric) that should receive admin access on first login.
+  admin-ids:
+    - "123456789"

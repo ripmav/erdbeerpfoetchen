@@ -63,6 +63,7 @@ func run() error {
 
 	k := kong.Parse(&app, options...)
 	k.BindTo(ctx, (*context.Context)(nil))
+	app.Config.ConfigFile = app.ConfigFile // make path available for config-file-only fields
 
 	if err := k.Run(&app.Config); err != nil {
 		return fmt.Errorf("exit: %w", err)

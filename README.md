@@ -119,7 +119,7 @@ The config file path can also be set via `PFOETCHEN_CONFIG`.
 | `--twitch.client-id` | `PFOETCHEN_TWITCH_CLIENT_ID` | — | Twitch OAuth application client ID |
 | `--twitch.client-secret` | `PFOETCHEN_TWITCH_CLIENT_SECRET` | — | Twitch OAuth application client secret |
 | `--twitch.redirect-url` | `PFOETCHEN_TWITCH_REDIRECT_URL` | — | OAuth redirect URL (e.g. `https://example.com/auth/twitch/callback`) |
-| `--twitch.admin-ids` | `PFOETCHEN_TWITCH_ADMIN_IDS` | — | Comma-separated Twitch user IDs to grant admin access |
+| `twitch.admin-ids` *(config file only)* | — | — | List of Twitch user IDs to grant admin access; not settable via flag or env var |
 | `--config` / `-c` | `PFOETCHEN_CONFIG` | — | Path to YAML config file |
 
 ## Commands

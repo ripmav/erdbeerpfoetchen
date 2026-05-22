@@ -65,7 +65,7 @@ AuthUserService     GetUserByTwitchId / CreateUser
 | `twitch.client-id` | `PFOETCHEN_TWITCH_CLIENT_ID` | — |
 | `twitch.client-secret` | `PFOETCHEN_TWITCH_CLIENT_SECRET` | — |
 | `twitch.redirect-url` | `PFOETCHEN_TWITCH_REDIRECT_URL` | — |
-| `twitch.admin-ids` | `PFOETCHEN_TWITCH_ADMIN_IDS` | — (comma-separated Twitch user IDs) |
+| `twitch.admin-ids` *(config file only)* | — | — (YAML list of Twitch user IDs; no CLI flag, no env var) |
 | `--config` / `-c` | `PFOETCHEN_CONFIG` | — |
 
 ### CLI Commands

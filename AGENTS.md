@@ -57,7 +57,7 @@ CLI (kong)  →  HTTP handlers  →  Services  →  Repositories  →  PostgreSQ
 - Collections are stored as PostgreSQL `JSONB` and handled as `json.RawMessage` in Go — callers pass arbitrary JSON blobs.
 - `log/slog` is used throughout; `--debug` enables verbose output.
 - The rate limiter reads `rate_limit_per_minute` from `streaming.user` on every request via the `RateLimitProvider` interface. The `user.Service` satisfies this interface and is wired in `internal/cli/api.go`.
-- Twitch OAuth config lives under `twitch.*` / `PFOETCHEN_TWITCH_*`; admin Twitch user IDs are set via `twitch.admin-ids` (comma-separated). First login creates a `streaming.user` row; subsequent logins return the same `api_token`.
+- Twitch OAuth config lives under `twitch.*` / `PFOETCHEN_TWITCH_*`; admin Twitch user IDs are set via `twitch.admin-ids` in the config file **only** — this key has no CLI flag and no env var by design. First login creates a `streaming.user` row; subsequent logins return the same `api_token`.
 
 ### API
 
