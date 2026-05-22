@@ -31,10 +31,12 @@ type AuthUserService interface {
 }
 
 type AuthHandler struct {
-	oauth    *oauth2.Config
-	users    AuthUserService
-	adminIDs map[string]struct{}
-	usersURL string
+	oauth      *oauth2.Config
+	users      AuthUserService
+	adminIDs   map[string]struct{}
+	usersURL   string
+	httpClient *http.Client
+	secure     bool
 }
 
 func newAuthHandler(cfg *oauth2.Config, adminIDs []string, users AuthUserService) *AuthHandler {
@@ -43,15 +45,16 @@ func newAuthHandler(cfg *oauth2.Config, adminIDs []string, users AuthUserService
 		adminMap[id] = struct{}{}
 	}
 	return &AuthHandler{
-		oauth:    cfg,
-		users:    users,
-		adminIDs: adminMap,
-		usersURL: twitchUsersURL,
+		oauth:      cfg,
+		users:      users,
+		adminIDs:   adminMap,
+		usersURL:   twitchUsersURL,
+		httpClient: &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
-func NewAuthHandler(clientID, clientSecret, redirectURL string, adminIDs []string, users AuthUserService) *AuthHandler {
-	return newAuthHandler(&oauth2.Config{
+func NewAuthHandler(clientID, clientSecret, redirectURL string, adminIDs []string, users AuthUserService, secure bool) *AuthHandler {
+	h := newAuthHandler(&oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		RedirectURL:  redirectURL,
@@ -60,6 +63,8 @@ func NewAuthHandler(clientID, clientSecret, redirectURL string, adminIDs []strin
 			TokenURL: twitchTokenURL,
 		},
 	}, adminIDs, users)
+	h.secure = secure
+	return h
 }
 
 func (h *AuthHandler) Install(mux *http.ServeMux) {
@@ -92,6 +97,7 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 		Value:    state,
 		MaxAge:   int(stateCookieMaxAge / time.Second),
 		HttpOnly: true,
+		Secure:   h.secure,
 		SameSite: http.SameSiteLaxMode,
 		Path:     "/",
 	})
@@ -181,7 +187,7 @@ func (h *AuthHandler) fetchTwitchUser(ctx context.Context, accessToken string) (
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Client-Id", h.oauth.ClientID)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := h.httpClient.Do(req)
 	if err != nil {
 		return "", "", err
 	}
