@@ -43,6 +43,15 @@ func (cmd *ApiCommand) Run(ctx context.Context, cfg *Config) error {
 	collectionHandler := handle.NewCollectionHandler(collectionService, userService, rateLimiter)
 	collectionHandler.Install(mux)
 
+	authHandler := handle.NewAuthHandler(
+		cfg.Twitch.ClientID,
+		cfg.Twitch.ClientSecret,
+		cfg.Twitch.RedirectURL,
+		cfg.Twitch.AdminIDs,
+		userService,
+	)
+	authHandler.Install(mux)
+
 	if err := cfg.ListenAndServe(ctx, mux); err != nil {
 		return fmt.Errorf("failed to serve: %w", err)
 	}

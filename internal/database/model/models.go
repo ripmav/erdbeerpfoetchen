@@ -5,6 +5,7 @@
 package model
 
 import (
+	"database/sql"
 	"encoding/json"
 
 	"github.com/google/uuid"
@@ -23,4 +24,6 @@ type StreamingUser struct {
 	UserName           string
 	ApiToken           uuid.UUID
 	RateLimitPerMinute int32
+	TwitchID           sql.NullString
+	IsAdmin            bool
 }

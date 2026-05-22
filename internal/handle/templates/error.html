@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pfötchen — Error</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0e0e10;color:#efeff1;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
+  .card{background:#18181b;border-radius:12px;padding:48px 40px;text-align:center;max-width:400px;width:100%}
+  h1{font-size:1.5rem;font-weight:700;margin-bottom:12px;color:#ff6b6b}
+  p{color:#adadb8;margin-bottom:28px}
+  a.btn{display:inline-block;background:#2d2d35;color:#efeff1;text-decoration:none;font-weight:600;padding:12px 24px;border-radius:8px;transition:background .15s}
+  a.btn:hover{background:#3d3d45}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Authentication failed</h1>
+  <p>{{.}}</p>
+  <a class="btn" href="/">Try again</a>
+</div>
+</body>
+</html>

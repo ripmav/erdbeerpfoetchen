@@ -25,6 +25,13 @@ type Config struct {
 	DB struct {
 		URI string `name:"uri" env:"URI" help:"Database URI"`
 	} `embed:"" prefix:"database." envprefix:"DATABASE_"`
+
+	Twitch struct {
+		ClientID     string   `name:"client-id" env:"CLIENT_ID" help:"Twitch OAuth application client ID"`
+		ClientSecret string   `name:"client-secret" env:"CLIENT_SECRET" help:"Twitch OAuth application client secret"`
+		RedirectURL  string   `name:"redirect-url" env:"REDIRECT_URL" help:"Twitch OAuth redirect URL (e.g. https://example.com/auth/twitch/callback)"`
+		AdminIDs     []string `name:"admin-ids" env:"ADMIN_IDS" sep:"," help:"Comma-separated Twitch user IDs to grant admin access"`
+	} `embed:"" prefix:"twitch." envprefix:"TWITCH_"`
 }
 
 func (cfg *Config) SetDefaultLogger() {
