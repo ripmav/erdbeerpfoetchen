@@ -10,7 +10,8 @@ import (
 )
 
 type Config struct {
-	EnableDebug bool `name:"debug" env:"DEBUG" default:"false" help:"Enable debug mode"`
+	ConfigFile  string `kong:"-"` // set by main after kong.Parse; never a CLI flag or env var
+	EnableDebug bool   `name:"debug" env:"DEBUG" default:"false" help:"Enable debug mode"`
 
 	Server struct {
 		Listen       string `name:"listen" env:"LISTEN" default:":8080" help:"Listen address"`
@@ -25,6 +26,12 @@ type Config struct {
 	DB struct {
 		URI string `name:"uri" env:"URI" help:"Database URI"`
 	} `embed:"" prefix:"database." envprefix:"DATABASE_"`
+
+	Twitch struct {
+		ClientID     string `name:"client-id" env:"CLIENT_ID" help:"Twitch OAuth application client ID"`
+		ClientSecret string `name:"client-secret" env:"CLIENT_SECRET" help:"Twitch OAuth application client secret"`
+		RedirectURL  string `name:"redirect-url" env:"REDIRECT_URL" help:"Twitch OAuth redirect URL (e.g. https://example.com/auth/twitch/callback)"`
+	} `embed:"" prefix:"twitch." envprefix:"TWITCH_"`
 }
 
 func (cfg *Config) SetDefaultLogger() {

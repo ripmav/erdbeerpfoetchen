@@ -105,3 +105,68 @@ func TestService_GetUserApiToken(t *testing.T) {
 		assert.Contains(t, err.Error(), "cannot get user api token:")
 	})
 }
+
+func TestService_GetUserByTwitchId(t *testing.T) {
+	ctx := context.Background()
+	want := &model.StreamingUser{UserName: "alice"}
+
+	t.Run("returns user from repo", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := mock.NewMockRepository(ctrl)
+		repo.EXPECT().GetUserByTwitchId(gomock.Any(), "twitch-123").Return(want, nil)
+		svc := user.New(repo)
+		got, err := svc.GetUserByTwitchId(ctx, "twitch-123")
+		require.NoError(t, err)
+		assert.Equal(t, want.UserName, got.UserName)
+	})
+
+	t.Run("wraps repo error with prefix", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := mock.NewMockRepository(ctrl)
+		repoErr := errors.New("db error")
+		repo.EXPECT().GetUserByTwitchId(gomock.Any(), "twitch-123").Return(nil, repoErr)
+		svc := user.New(repo)
+		_, err := svc.GetUserByTwitchId(ctx, "twitch-123")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, repoErr)
+		assert.Contains(t, err.Error(), "cannot get user by twitch id:")
+	})
+}
+
+func TestService_CreateUser(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("creates user via repo", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := mock.NewMockRepository(ctrl)
+		want := &model.StreamingUser{UserName: "alice"}
+		repo.EXPECT().CreateUser(gomock.Any(), "alice", "twitch-123", gomock.Any(), false).Return(want, nil)
+		svc := user.New(repo)
+		got, err := svc.CreateUser(ctx, "alice", "twitch-123", false)
+		require.NoError(t, err)
+		assert.Equal(t, want.UserName, got.UserName)
+	})
+
+	t.Run("creates admin user via repo", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := mock.NewMockRepository(ctrl)
+		want := &model.StreamingUser{UserName: "admin", IsAdmin: true}
+		repo.EXPECT().CreateUser(gomock.Any(), "admin", "twitch-admin", gomock.Any(), true).Return(want, nil)
+		svc := user.New(repo)
+		got, err := svc.CreateUser(ctx, "admin", "twitch-admin", true)
+		require.NoError(t, err)
+		assert.True(t, got.IsAdmin)
+	})
+
+	t.Run("wraps repo error with prefix", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := mock.NewMockRepository(ctrl)
+		repoErr := errors.New("db error")
+		repo.EXPECT().CreateUser(gomock.Any(), "alice", "twitch-123", gomock.Any(), false).Return(nil, repoErr)
+		svc := user.New(repo)
+		_, err := svc.CreateUser(ctx, "alice", "twitch-123", false)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, repoErr)
+		assert.Contains(t, err.Error(), "cannot create user:")
+	})
+}

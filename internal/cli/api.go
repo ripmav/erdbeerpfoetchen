@@ -43,6 +43,20 @@ func (cmd *ApiCommand) Run(ctx context.Context, cfg *Config) error {
 	collectionHandler := handle.NewCollectionHandler(collectionService, userService, rateLimiter)
 	collectionHandler.Install(mux)
 
+	adminIDs, err := cfg.AdminIDs()
+	if err != nil {
+		return fmt.Errorf("read admin IDs from config: %w", err)
+	}
+
+	authHandler := handle.NewAuthHandler(
+		cfg.Twitch.ClientID,
+		cfg.Twitch.ClientSecret,
+		cfg.Twitch.RedirectURL,
+		adminIDs,
+		userService,
+	)
+	authHandler.Install(mux)
+
 	if err := cfg.ListenAndServe(ctx, mux); err != nil {
 		return fmt.Errorf("failed to serve: %w", err)
 	}

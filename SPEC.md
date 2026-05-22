@@ -17,7 +17,17 @@ Go REST API: store/retrieve per-viewer JSON collections keyed by streamer+collec
 
 ## §I Interfaces
 
-### HTTP Endpoints (all require `Authorization: Bearer <uuid>`)
+### HTTP Endpoints
+
+**Auth (browser-facing, no Bearer):**
+
+| Method | Path | Description | Response |
+|--------|------|-------------|----------|
+| GET | `/` | Login page | 200 HTML |
+| GET | `/auth/twitch` | Redirect to Twitch OAuth | 307 |
+| GET | `/auth/twitch/callback` | Exchange code → create/load user → show api_token | 200 HTML |
+
+**Collection (require `Authorization: Bearer <api_token>`):**
 
 | Method | Path | Headers | Response |
 |--------|------|---------|----------|
@@ -28,7 +38,7 @@ Go REST API: store/retrieve per-viewer JSON collections keyed by streamer+collec
 
 ```
 Collection     { RawMessage json.RawMessage; CollectionType string }
-StreamingUser  { ID uuid; UserName string; ApiToken uuid; RateLimitPerMinute int32 }
+StreamingUser  { ID uuid; UserName string; ApiToken uuid; RateLimitPerMinute int32; TwitchID sql.NullString; IsAdmin bool }
 StreamingCollection { CollectionKey string; Streamer uuid; Viewer string; Json json.RawMessage; CollectionType string }
 ```
 
@@ -39,6 +49,7 @@ TokenValidator      GetUserApiToken(ctx, userName) (uuid.UUID, error)
 RateLimitProvider   GetUserRateLimit(ctx, userName) (int32, error)
 CollectionService   WriteCollection / ReadCollection
 UserService         GetUserApiToken / GetUserByUserName
+AuthUserService     GetUserByTwitchId / CreateUser
 ```
 
 ### Config (YAML / env / flags)
@@ -51,6 +62,10 @@ UserService         GetUserApiToken / GetUserByUserName
 | `server.tls.cert` | `PFOETCHEN_SERVER_TLS_CERT_PATH` | — |
 | `server.tls.key` | `PFOETCHEN_SERVER_TLS_KEY_PATH` | — |
 | `database.uri` | `PFOETCHEN_DATABASE_URI` | — |
+| `twitch.client-id` | `PFOETCHEN_TWITCH_CLIENT_ID` | — |
+| `twitch.client-secret` | `PFOETCHEN_TWITCH_CLIENT_SECRET` | — |
+| `twitch.redirect-url` | `PFOETCHEN_TWITCH_REDIRECT_URL` | — |
+| `twitch.admin-ids` *(config file only)* | — | — (YAML list of Twitch user IDs; no CLI flag, no env var) |
 | `--config` / `-c` | `PFOETCHEN_CONFIG` | — |
 
 ### CLI Commands
@@ -66,12 +81,17 @@ UserService         GetUserApiToken / GetUserByUserName
 - Rate limiter uses per-streamer token bucket; falls back to 100 req/min on DB error
 - `streaming.collection` PK = (collection_key, streamer, viewer) — upsert on conflict
 - `streaming.user.api_token` = UUID, unique per user
+- `streaming.user.twitch_id` = VARCHAR UNIQUE (nullable for pre-OAuth users)
+- `streaming.user.is_admin` = BOOLEAN, never exposed to the user in the UI
 - Migrations embedded in binary via goose; applied before server start
 - `X-COLLECTION-TYPE` absent → stored as "default"
 - `X-USER-KEY` or `X-COLLECTION-KEY` absent → 400
 - Invalid/missing Bearer → 401; token mismatch → 403
 - Rate exceeded → 429
 - Rate limiter cleanup: buckets idle >3min are evicted
+- Twitch OAuth CSRF: state is generated per login attempt, stored in a HttpOnly SameSite=Lax cookie, verified in callback
+- First Twitch login creates a `streaming.user`; subsequent logins return the same `api_token`
+- Admin status is set at creation from `twitch.admin-ids` config; not visible in the UI
 
 ## §T Tasks
 
@@ -88,9 +108,11 @@ UserService         GetUserApiToken / GetUserByUserName
 | 9 | YAML config support | done | kong resolver |
 | 10 | Docker Compose setup | done | migrate svc + api svc |
 | 11 | Graceful shutdown | done | SIGINT/SIGTERM |
-| 12 | User management API | open | no CRUD endpoints yet for users |
-| 13 | TLS termination in-process | open | cert/key config exists, not wired |
-| 14 | OpenAPI: X-COLLECTION-TYPE doc | open | header missing in spec |
+| 12 | Twitch OAuth login | done | browser flow, first-login creates user, CSRF state cookie |
+| 13 | Admin user designation | done | `twitch.admin-ids` config; is_admin stored in DB |
+| 14 | User management API | open | no CRUD endpoints yet for users |
+| 15 | TLS termination in-process | open | cert/key config exists, not wired |
+| 16 | OpenAPI: X-COLLECTION-TYPE doc | done | documented in openapi.yaml |
 
 ## §B Bugs
 

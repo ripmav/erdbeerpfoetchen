@@ -1,36 +1,104 @@
 openapi: 3.0.0
 info:
   title: Pfötchen API
-  description: API for managing collections.
-  version: 1.0.0
+  description: API for managing per-viewer JSON collections, with Twitch OAuth authentication.
+  version: 1.1.0
 servers:
-  - url: /api/v1
-    description: V1 API
+  - url: /
+    description: Pfötchen server
 
 paths:
-  /collection/{streamer_name}:
+  /:
+    get:
+      summary: Login page
+      description: Renders the browser-facing login page with a "Login with Twitch" button.
+      tags: [Auth]
+      responses:
+        '200':
+          description: HTML login page
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /auth/twitch:
+    get:
+      summary: Initiate Twitch OAuth flow
+      description: |
+        Redirects the browser to Twitch for OAuth2 authorisation. Sets a
+        short-lived `twitch_oauth_state` cookie for CSRF protection.
+      tags: [Auth]
+      responses:
+        '307':
+          description: Redirect to Twitch authorisation endpoint
+          headers:
+            Location:
+              schema:
+                type: string
+            Set-Cookie:
+              schema:
+                type: string
+                example: twitch_oauth_state=<random>; HttpOnly; SameSite=Lax; Path=/
+
+  /auth/twitch/callback:
+    get:
+      summary: Twitch OAuth callback
+      description: |
+        Handles the Twitch authorisation callback. Exchanges the code for a
+        token, fetches the Twitch user identity, and either looks up the
+        existing account or creates a new one on first login. Renders an HTML
+        page showing the user's `api_token` for use with the collection
+        endpoints.
+      tags: [Auth]
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: HTML success page with api_token
+          content:
+            text/html:
+              schema:
+                type: string
+        '400':
+          description: Missing authorisation code
+        '403':
+          description: Missing or mismatched CSRF state
+        '500':
+          description: Token exchange or Twitch API failure
+
+  /api/v1/collection/{streamer_name}:
     parameters:
       - name: streamer_name
         in: path
         required: true
-        description: Name of the streamer.
+        description: Twitch login name of the streamer whose collection is being accessed.
         schema:
           type: string
       - name: X-USER-KEY
         in: header
         required: true
-        description: Unique key for the viewer.
+        description: Unique key identifying the viewer.
         schema:
           type: string
       - name: X-COLLECTION-KEY
         in: header
         required: true
-        description: Unique key for the collection.
+        description: Unique key identifying the collection within the streamer's namespace.
         schema:
           type: string
     get:
-      summary: Read collections
-      description: Returns the collection for the given streamer, viewer, and collection key.
+      summary: Read a collection
+      description: Returns the stored JSON collection for the given streamer, viewer, and collection key.
+      tags: [Collection]
       security:
         - BearerAuth: []
       responses:
@@ -42,18 +110,32 @@ paths:
                 type: object
                 additionalProperties: true
         '400':
-          description: Bad request (e.g., missing headers)
+          description: Bad request (missing required headers)
         '401':
-          description: Unauthorized (missing or invalid token)
+          description: Unauthorized (missing or malformed Bearer token)
         '403':
-          description: Forbidden (invalid streamer name or token)
+          description: Forbidden (token does not match the streamer's api_token)
+        '429':
+          description: Rate limit exceeded
         '500':
           description: Internal server error
     post:
-      summary: Write collections
-      description: Updates the collection for the given streamer, viewer, and collection key.
+      summary: Write a collection
+      description: |
+        Upserts the JSON collection for the given streamer, viewer, and
+        collection key. Optionally accepts `X-COLLECTION-TYPE`; defaults to
+        `"default"` when absent.
+      tags: [Collection]
       security:
         - BearerAuth: []
+      parameters:
+        - name: X-COLLECTION-TYPE
+          in: header
+          required: false
+          description: Collection type label (defaults to "default").
+          schema:
+            type: string
+            default: default
       requestBody:
         required: true
         content:
@@ -65,11 +147,13 @@ paths:
         '202':
           description: Request accepted
         '400':
-          description: Bad request (e.g., missing headers or invalid payload)
+          description: Bad request (missing headers or invalid JSON body)
         '401':
-          description: Unauthorized (missing or invalid token)
+          description: Unauthorized (missing or malformed Bearer token)
         '403':
-          description: Forbidden (invalid streamer name or token)
+          description: Forbidden (token does not match the streamer's api_token)
+        '429':
+          description: Rate limit exceeded
         '500':
           description: Internal server error
 
@@ -78,3 +162,7 @@ components:
     BearerAuth:
       type: http
       scheme: bearer
+      bearerFormat: UUID
+      description: |
+        The `api_token` UUID obtained from the Twitch OAuth callback
+        (`/auth/twitch`). Pass as `Authorization: Bearer <uuid>`.

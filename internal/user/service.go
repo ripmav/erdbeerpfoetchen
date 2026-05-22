@@ -14,6 +14,8 @@ type Repository interface {
 	GetUserById(ctx context.Context, userId uuid.UUID) (*model.StreamingUser, error)
 	GetUserByUserName(ctx context.Context, userName string) (*model.StreamingUser, error)
 	GetUserRateLimit(ctx context.Context, userName string) (int32, error)
+	GetUserByTwitchId(ctx context.Context, twitchID string) (*model.StreamingUser, error)
+	CreateUser(ctx context.Context, userName, twitchID string, apiToken uuid.UUID, isAdmin bool) (*model.StreamingUser, error)
 }
 
 type Service struct {
@@ -54,4 +56,24 @@ func (s *Service) GetUserRateLimit(ctx context.Context, userName string) (int32,
 		return 0, fmt.Errorf("cannot get user rate limit: %w", err)
 	}
 	return limit, nil
+}
+
+func (s *Service) GetUserByTwitchId(ctx context.Context, twitchID string) (*model.StreamingUser, error) {
+	u, err := s.userRepo.GetUserByTwitchId(ctx, twitchID)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get user by twitch id: %w", err)
+	}
+	return u, nil
+}
+
+func (s *Service) CreateUser(ctx context.Context, userName, twitchID string, isAdmin bool) (*model.StreamingUser, error) {
+	apiToken, err := uuid.NewV7()
+	if err != nil {
+		return nil, fmt.Errorf("cannot generate api token: %w", err)
+	}
+	u, err := s.userRepo.CreateUser(ctx, userName, twitchID, apiToken, isAdmin)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create user: %w", err)
+	}
+	return u, nil
 }

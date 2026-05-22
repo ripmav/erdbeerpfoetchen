@@ -18,6 +18,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
+
 // MockRepository is a mock of Repository interface.
 type MockRepository struct {
 	ctrl     *gomock.Controller
@@ -100,4 +101,34 @@ func (m *MockRepository) GetUserRateLimit(ctx context.Context, userName string) 
 func (mr *MockRepositoryMockRecorder) GetUserRateLimit(ctx, userName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserRateLimit", reflect.TypeOf((*MockRepository)(nil).GetUserRateLimit), ctx, userName)
+}
+
+// GetUserByTwitchId mocks base method.
+func (m *MockRepository) GetUserByTwitchId(ctx context.Context, twitchID string) (*model.StreamingUser, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserByTwitchId", ctx, twitchID)
+	ret0, _ := ret[0].(*model.StreamingUser)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserByTwitchId indicates an expected call of GetUserByTwitchId.
+func (mr *MockRepositoryMockRecorder) GetUserByTwitchId(ctx, twitchID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByTwitchId", reflect.TypeOf((*MockRepository)(nil).GetUserByTwitchId), ctx, twitchID)
+}
+
+// CreateUser mocks base method.
+func (m *MockRepository) CreateUser(ctx context.Context, userName, twitchID string, apiToken uuid.UUID, isAdmin bool) (*model.StreamingUser, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUser", ctx, userName, twitchID, apiToken, isAdmin)
+	ret0, _ := ret[0].(*model.StreamingUser)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateUser indicates an expected call of CreateUser.
+func (mr *MockRepositoryMockRecorder) CreateUser(ctx, userName, twitchID, apiToken, isAdmin any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockRepository)(nil).CreateUser), ctx, userName, twitchID, apiToken, isAdmin)
 }

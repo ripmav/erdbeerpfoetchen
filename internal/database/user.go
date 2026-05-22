@@ -89,3 +89,35 @@ func (repo *UserRepository) GetUserRateLimit(ctx context.Context, userName strin
 
 	return limit, nil
 }
+
+func (repo *UserRepository) GetUserByTwitchId(ctx context.Context, twitchID string) (*model.StreamingUser, error) {
+	var u model.StreamingUser
+	err := repo.db.Read(ctx, func(tx *sql.Tx) (err error) {
+		q := model.New(tx)
+		u, err = q.GetUserByTwitchId(ctx, twitchID)
+		return
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (repo *UserRepository) CreateUser(ctx context.Context, userName, twitchID string, apiToken uuid.UUID, isAdmin bool) (*model.StreamingUser, error) {
+	var u model.StreamingUser
+	err := repo.db.Update(ctx, func(tx *sql.Tx) (err error) {
+		q := model.New(tx)
+		u, err = q.CreateUser(ctx, model.CreateUserParams{
+			UserName:           userName,
+			TwitchID:           twitchID,
+			ApiToken:           apiToken,
+			RateLimitPerMinute: 100,
+			IsAdmin:            isAdmin,
+		})
+		return
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}

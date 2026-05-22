@@ -51,7 +51,7 @@ func (q *Queries) GetUserApiToken(ctx context.Context, userName string) (uuid.UU
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, user_name, api_token, rate_limit_per_minute FROM "streaming"."user"
+SELECT id, user_name, api_token, rate_limit_per_minute, twitch_id, is_admin FROM "streaming"."user"
 WHERE "id" = $1
 `
 
@@ -63,12 +63,14 @@ func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (StreamingUser,
 		&i.UserName,
 		&i.ApiToken,
 		&i.RateLimitPerMinute,
+		&i.TwitchID,
+		&i.IsAdmin,
 	)
 	return i, err
 }
 
 const getUserByUserName = `-- name: GetUserByUserName :one
-SELECT id, user_name, api_token, rate_limit_per_minute FROM "streaming"."user"
+SELECT id, user_name, api_token, rate_limit_per_minute, twitch_id, is_admin FROM "streaming"."user"
 WHERE "user_name" = $1
 `
 
@@ -80,6 +82,61 @@ func (q *Queries) GetUserByUserName(ctx context.Context, userName string) (Strea
 		&i.UserName,
 		&i.ApiToken,
 		&i.RateLimitPerMinute,
+		&i.TwitchID,
+		&i.IsAdmin,
+	)
+	return i, err
+}
+
+const getUserByTwitchId = `-- name: GetUserByTwitchId :one
+SELECT id, user_name, api_token, rate_limit_per_minute, twitch_id, is_admin FROM "streaming"."user"
+WHERE "twitch_id" = $1
+`
+
+func (q *Queries) GetUserByTwitchId(ctx context.Context, twitchID string) (StreamingUser, error) {
+	row := q.db.QueryRowContext(ctx, getUserByTwitchId, twitchID)
+	var i StreamingUser
+	err := row.Scan(
+		&i.ID,
+		&i.UserName,
+		&i.ApiToken,
+		&i.RateLimitPerMinute,
+		&i.TwitchID,
+		&i.IsAdmin,
+	)
+	return i, err
+}
+
+const createUser = `-- name: CreateUser :one
+INSERT INTO "streaming"."user" ("user_name", "twitch_id", "api_token", "rate_limit_per_minute", "is_admin")
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, user_name, api_token, rate_limit_per_minute, twitch_id, is_admin
+`
+
+type CreateUserParams struct {
+	UserName           string
+	TwitchID           string
+	ApiToken           uuid.UUID
+	RateLimitPerMinute int32
+	IsAdmin            bool
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (StreamingUser, error) {
+	row := q.db.QueryRowContext(ctx, createUser,
+		arg.UserName,
+		arg.TwitchID,
+		arg.ApiToken,
+		arg.RateLimitPerMinute,
+		arg.IsAdmin,
+	)
+	var i StreamingUser
+	err := row.Scan(
+		&i.ID,
+		&i.UserName,
+		&i.ApiToken,
+		&i.RateLimitPerMinute,
+		&i.TwitchID,
+		&i.IsAdmin,
 	)
 	return i, err
 }

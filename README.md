@@ -4,9 +4,11 @@
 
 ## Features
 
+- **Twitch OAuth login** — browser-based sign-in flow; first login creates the user account automatically
 - **RESTful API** — endpoints for reading and writing JSON collections
-- **Bearer token auth** — middleware-enforced on every request
+- **Bearer token auth** — middleware-enforced on every API request; token obtained via Twitch OAuth
 - **Per-streamer rate limiting** — token bucket per streamer, limit stored in the database (default 100 req/min)
+- **Admin users** — designate admin Twitch user IDs via config; `is_admin` flag stored in the database
 - **YAML configuration** — all settings loadable from a config file; CLI flags and env vars override file values
 - **Auto-migration** — migrations are embedded in the binary and applied on startup; no external tooling required
 - **Docker Compose** — one-command local setup; dedicated compose file for external PostgreSQL
@@ -51,7 +53,8 @@ In both cases the `migrate` service applies all pending migrations before `api` 
 │   ├── collection/             # domain service + repository interface
 │   ├── database/               # PostgreSQL repositories, migrations
 │   │   └── model/              # sqlc-generated types
-│   ├── handle/                 # HTTP handlers
+│   ├── handle/                 # HTTP handlers (collection + Twitch OAuth)
+│   │   └── templates/          # Embedded HTML templates (login, success, error)
 │   ├── middleware/             # auth, rate-limit
 │   └── user/                   # user domain service + repository interface
 ├── schema/
@@ -64,6 +67,41 @@ In both cases the `migrate` service applies all pending migrations before `api` 
 ├── .env.example
 └── go.mod
 ```
+
+## Twitch application setup
+
+To enable the OAuth login flow you need a Twitch developer application. This takes about two minutes.
+
+1. **Open the Twitch Developer Console** at `https://dev.twitch.tv/console` and log in with your Twitch account.
+
+2. **Register a new application**
+   - Click **Register Your Application**.
+   - Fill in a name (e.g. *Pfötchen*).
+   - Under **OAuth Redirect URLs** add the callback URL your server will be reachable at:
+     ```
+     https://example.com/auth/twitch/callback
+     ```
+     For local development you can use `http://localhost:8080/auth/twitch/callback`.
+     > Twitch requires HTTPS for production redirect URLs.
+   - Set the **Category** to *Website Integration* (or whichever fits best).
+   - Click **Create**.
+
+3. **Copy the credentials**
+   - After creation you land on the application detail page.
+   - Copy the **Client ID** shown there.
+   - Click **New Secret**, confirm the dialog, then copy the generated **Client Secret** immediately — it is only shown once.
+
+4. **Add them to your config file**
+   ```yaml
+   twitch:
+     client-id: "your_client_id_here"
+     client-secret: "your_client_secret_here"
+     redirect-url: "https://example.com/auth/twitch/callback"
+   ```
+   `client-id` and `client-secret` can alternatively be supplied via environment variables `PFOETCHEN_TWITCH_CLIENT_ID` and `PFOETCHEN_TWITCH_CLIENT_SECRET`.
+
+> [!WARNING]
+> Never commit `client-secret` to version control. Use environment variables or a secrets manager in production.
 
 ## Configuration
 
@@ -113,6 +151,10 @@ The config file path can also be set via `PFOETCHEN_CONFIG`.
 | `--server.tls.cert` | `PFOETCHEN_SERVER_TLS_CERT_PATH` | — | TLS certificate path |
 | `--server.tls.key` | `PFOETCHEN_SERVER_TLS_KEY_PATH` | — | TLS key path |
 | `--database.uri` | `PFOETCHEN_DATABASE_URI` | — | PostgreSQL connection URI |
+| `--twitch.client-id` | `PFOETCHEN_TWITCH_CLIENT_ID` | — | Twitch OAuth application client ID |
+| `--twitch.client-secret` | `PFOETCHEN_TWITCH_CLIENT_SECRET` | — | Twitch OAuth application client secret |
+| `--twitch.redirect-url` | `PFOETCHEN_TWITCH_REDIRECT_URL` | — | OAuth redirect URL (e.g. `https://example.com/auth/twitch/callback`) |
+| `twitch.admin-ids` *(config file only)* | — | — | List of Twitch user IDs to grant admin access; not settable via flag or env var |
 | `--config` / `-c` | `PFOETCHEN_CONFIG` | — | Path to YAML config file |
 
 ## Commands
@@ -139,10 +181,21 @@ sqlc generate
 
 ## API
 
-Full spec in [`docs/openapi.yaml`](docs/openapi.yaml). All endpoints require `Authorization: Bearer <token>`.
+Full spec in [`docs/openapi.yaml`](docs/openapi.yaml).
 
-> [!NOTE]
-> The bearer token is currently hardcoded to `my-super-secret-key` — see [TODO.md](TODO.md).
+### Authentication
+
+Users sign in via Twitch OAuth in the browser. Open the root URL and click **Login with Twitch**. After authorisation the callback page shows your `api_token` UUID — use it as the Bearer token for all collection requests. First login creates your account automatically.
+
+### Auth endpoints (no Bearer required)
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/` | Login page |
+| `GET` | `/auth/twitch` | Initiate Twitch OAuth redirect |
+| `GET` | `/auth/twitch/callback` | Complete OAuth flow, display `api_token` |
+
+### Collection endpoints (require `Authorization: Bearer <api_token>`)
 
 | Method | Path | Request headers | Success |
 |---|---|---|---|
